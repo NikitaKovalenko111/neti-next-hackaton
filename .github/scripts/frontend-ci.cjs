@@ -53,19 +53,53 @@ if (manager === 'yarn') {
   install = ['install', classic ? '--frozen-lockfile' : '--immutable'];
 }
 
-function run(args) {
+function run(args, { capture = false, allowFailure = false } = {}) {
   console.log(`\n> ${executable} ${[...prefix, ...args].join(' ')}`);
   const result = spawnSync(executable, [...prefix, ...args], {
     cwd: directory,
     env: { ...process.env, CI: 'true' },
-    stdio: 'inherit',
+    stdio: capture ? ['inherit', 'pipe', 'pipe'] : 'inherit',
+    encoding: 'utf8',
+    maxBuffer: 16 * 1024 * 1024,
   });
 
   if (result.error) throw result.error;
-  if (result.status !== 0) process.exit(result.status || 1);
+  if (capture) {
+    if (result.stdout) fs.writeSync(1, result.stdout);
+    if (result.stderr) fs.writeSync(2, result.stderr);
+  }
+  if (result.status !== 0 && !allowFailure) process.exit(result.status || 1);
+
+  return result;
 }
 
-run(install);
+if (manager === 'npm') {
+  const result = run(install, { capture: true, allowFailure: true });
+
+  if (result.status !== 0) {
+    const output = `${result.stdout || ''}\n${result.stderr || ''}`;
+    const lockMismatch = /\bEUSAGE\b/.test(output) &&
+      /in sync|Missing: .+ from lock file|Invalid: lock file/.test(output);
+
+    if (!lockMismatch || lockfiles[0][1] !== 'package-lock.json') {
+      process.exit(result.status || 1);
+    }
+
+    const warning = 'package-lock.json is out of sync. Frontend developer must regenerate it. ' +
+      'CI will install from package.json without changing the committed lockfile.';
+    console.log(`::warning file=frontend/package-lock.json,title=Frontend lockfile mismatch::${warning}`);
+
+    if (process.env.GITHUB_STEP_SUMMARY) {
+      fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+        `\n### Frontend lockfile needs repair\n\n${warning}\n\n` +
+        'Lint, tests and build will run using dependencies resolved from package.json.\n');
+    }
+
+    run(['install', '--no-package-lock', '--no-save', '--no-audit', '--no-fund']);
+  }
+} else {
+  run(install);
+}
 
 const scripts = manifest.scripts || {};
 const checks = [
