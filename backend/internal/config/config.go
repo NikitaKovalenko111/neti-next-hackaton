@@ -24,7 +24,7 @@ type Config struct {
 func Load() (Config, error) {
 	c := Config{
 		HTTPAddress:           env("HTTP_ADDRESS", ":8080"),
-		PostgresURL:           env("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/university?sslmode=disable"),
+		PostgresURL:           env("POSTGRES_URL", "postgres://backend_app:backend_app@localhost:5433/university?sslmode=disable&search_path=backend"),
 		MinIOEndpoint:         env("MINIO_ENDPOINT", "localhost:9000"),
 		MinIOPublicEndpoint:   env("MINIO_PUBLIC_ENDPOINT", ""),
 		MinIORegion:           env("MINIO_REGION", "us-east-1"),

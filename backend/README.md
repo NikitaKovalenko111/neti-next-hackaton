@@ -6,6 +6,7 @@
 
 ```sh
 docker compose -f docker-compose.infrastructure.yml up -d
+docker compose -f docker-compose.infrastructure.yml run --rm postgres-init
 go run ./cmd/university-agent
 ```
 
@@ -14,6 +15,8 @@ go run ./cmd/university-agent
 Настройки через переменные окружения: `HTTP_ADDRESS`, `POSTGRES_URL`, `MINIO_ENDPOINT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET`, `MINIO_SECURE`, `RABBITMQ_URL`, `RABBITMQ_QUEUE` (имя очереди запросов), `RABBITMQ_RESPONSE_QUEUE` (имя очереди ответов). Имена очередей должны различаться. Значения по умолчанию соответствуют локальному Compose и предназначены для разработки.
 
 `MINIO_PUBLIC_ENDPOINT` — необязательный публичный URL вида `http://localhost:9000` для подписанных ссылок клиенту. Если он не задан, ссылки используют `MINIO_ENDPOINT`. `MINIO_REGION` по умолчанию равен `us-east-1` и должен совпадать с регионом сервера.
+
+По умолчанию PostgreSQL: `postgres://backend_app:backend_app@localhost:5433/university?sslmode=disable&search_path=backend`. Роль `backend_app` владеет схемой `backend`; все таблицы и журнал миграций создаются в ней. Если `POSTGRES_URL` не задаёт `search_path`, подключение использует `backend`. Подготовку схем и ролей выполняет отдельный `postgres-init` от администратора. Схема `rag` принадлежит отдельной роли `rag_app`; backend не получает доступа к ней.
 
 Миграции из `internal/migrations` применяются при запуске. Для отправки сообщения используйте `POST /request` с `multipart/form-data`: обязательный `user_id` — UUID пользователя, `message` — текст, повторяющееся поле `attachments` — файлы изображений. Необязательный `chat_id` (UUID) продолжает существующий чат; без него создаётся новый. Должны присутствовать текст или хотя бы одно изображение. Максимальный размер всего запроса — 32 МиБ.
 
