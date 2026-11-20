@@ -757,6 +757,49 @@ kbd {
   text-underline-offset: .15em;
 }
 
+.idle-snow {
+  position: fixed;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.idle-snowflake {
+  position: absolute;
+  inset-block-start: -44px;
+  display: block;
+  width: var(--flake-size);
+  height: auto;
+  aspect-ratio: 1;
+  filter: saturate(.78);
+  opacity: 0;
+  --flake-turn: 130deg;
+  animation: idle-snowfall var(--flake-duration) var(--flake-delay) linear infinite;
+}
+
+.idle-snowflake:nth-child(even) {
+  filter: hue-rotate(57deg) saturate(.67) brightness(1.08);
+  --flake-turn: -110deg;
+}
+
+@keyframes idle-snowfall {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) rotate(-12deg);
+  }
+  12%, 78% { opacity: .76; }
+  50% {
+    transform: translate3d(calc(var(--flake-drift) * -.4), calc(50dvh + 44px), 0)
+      rotate(calc(var(--flake-turn) * .45));
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--flake-drift), calc(100dvh + 88px), 0)
+      rotate(var(--flake-turn));
+  }
+}
+
 @media (max-width: 56rem) {
   .sidebar-content {
     padding-inline: .9rem;
@@ -791,6 +834,14 @@ kbd {
 }
 
 @media (max-width: 44rem) {
+  .idle-snowflake {
+    width: min(var(--flake-size), 29px);
+  }
+
+  .idle-snowflake:nth-child(n + 8) {
+    display: none;
+  }
+
   :root {
     --gutter: 1rem;
   }
@@ -991,6 +1042,10 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .idle-snow {
+    display: none;
+  }
+
   *,
   *::before,
   *::after {

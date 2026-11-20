@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { useDispatch, useSelector } from 'react-redux'
 import campusOrbit from '../../assets/campus-orbit.webp'
 import { AssistantIcon, AssistantMark } from '../../components/assistant/AssistantIcon'
+import { IdleSnow } from '../../components/assistant/IdleSnow'
 import { MessageBubble } from '../../components/assistant/MessageBubble'
 import { ProjectHeader, universityUrl } from '../../components/project-header/ProjectHeader'
 import { UniversityMark } from '../../components/project-header/UniversityMark'
@@ -231,6 +232,7 @@ export function AssistantPage() {
           <p className="composer-note"><AssistantIcon name="link" /> Ссылки на источники появятся под ответом</p>
         </div>
       </main>
+      {!isLoading && <IdleSnow />}
     </div>
   )
 }
