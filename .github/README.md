@@ -1,0 +1,13 @@
+# CI
+
+Workflow `ci.yml` запускается на push во все ветки, pull request и вручную.
+
+- Backend включается при наличии `backend/go.mod`: проверка зависимостей, `gofmt`, `go vet`, Staticcheck, тесты с `-race`, интеграционные тесты с PostgreSQL 16 и сборка. Версия Go берётся из `go.mod`.
+- Frontend включается при наличии `frontend/package.json`: установка по lockfile и запуск доступных scripts `lint`, `format:check`, `typecheck` (или `type-check`), `test:ci` (или `test`), `build`. Поддерживаются npm, pnpm и Yarn; нужен один соответствующий lockfile. Node.js — 22, версии pnpm/Yarn берутся из `packageManager`, если он указан.
+- Отсутствующий компонент получает `skipped`. Отсутствующий frontend script также пропускается с сообщением в логе; ошибка существующего script проваливает CI.
+- Проверка workflow через actionlint выполняется всегда, даже в ветках без приложения.
+- `CI result` — общая проверка для branch protection: принимает успешные проверки и пропуски отсутствующих компонентов, но не принимает ошибки и отмены.
+
+PostgreSQL поднимается автоматически; секреты для CI не нужны. Тесты, требующие одновременно реальных RabbitMQ и MinIO (`TestFullPipeline`), пока пропускаются: эти сервисы в workflow не поднимаются. Остальные интеграционные тесты используют `TEST_DATABASE_URL` из CI.
+
+Чтобы добавить новый компонент с другой структурой, дополните job `detect` и добавьте его проверку в зависимости `CI result`.
