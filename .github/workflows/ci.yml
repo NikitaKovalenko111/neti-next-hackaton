@@ -67,6 +67,9 @@ jobs:
       - name: Validate frontend CI script syntax
         run: node --check .github/scripts/frontend-ci.cjs
 
+      - name: Test frontend CI error handling
+        run: node --test .github/scripts/frontend-ci.test.cjs
+
   backend:
     name: Backend checks
     needs: detect

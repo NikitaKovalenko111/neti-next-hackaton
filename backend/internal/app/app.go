@@ -62,7 +62,10 @@ func RunContext(parent context.Context, cfg config.Config) error {
 	}
 	defer conn.Close()
 
-	objectStore := objectstorage.Wrap(objects, cfg.MinIOBucket)
+	objectStore, err := objectstorage.NewStorage(objects, cfg)
+	if err != nil {
+		return fmt.Errorf("configure object storage: %w", err)
+	}
 	blocks := blockservice.New(objectStore, cfg.MinIOBucket)
 	service := requestservice.New(
 		requestrepo.New(db),
