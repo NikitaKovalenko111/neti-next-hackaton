@@ -154,15 +154,17 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	}
 
 	attachmentID := uuid.New()
+	latitude, longitude := 54.720714, 55.933422
 	reply := models.AgentResponse{
 		RequestMessageID: accepted.MessageID,
 		Blocks: []models.Block{
-			{Text: &models.TextBlock{Message: "Answer"}},
+			{Text: &models.TextBlock{Message: "Answer", Audience: "student"}},
 			{Attachments: &models.AttachmentsBlock{Attachments: []models.AgentAttachment{{
 				ID: attachmentID, Bucket: "images", ObjectKey: "agent/image.png",
 				Filename: "image.png", ContentType: "image/png",
 			}}}},
 			{Text: &models.TextBlock{Message: "Final paragraph"}},
+			{Map: &models.MapBlock{Lat: &latitude, Lon: &longitude, Title: "Campus"}},
 		},
 	}
 	var first models.ResponseEvent
@@ -175,9 +177,14 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 			t.Fatal(err)
 		}
 		if event.Type != "agent_response" || event.ChatID != accepted.ChatID ||
-			len(event.Blocks) != 3 || event.Blocks[0].Text.Message != "Answer" ||
+			len(event.Blocks) != 4 || event.Blocks[0].Text.Message != "Answer" ||
+			event.Blocks[0].Text.Audience != "student" ||
 			event.Blocks[2].Text.Message != "Final paragraph" {
 			t.Fatalf("invalid event: %+v", event)
+		}
+		if pin := event.Blocks[3].Map; pin == nil || pin.Lat == nil || pin.Lon == nil ||
+			*pin.Lat != latitude || *pin.Lon != longitude {
+			t.Fatalf("invalid map sent over WebSocket: %+v", pin)
 		}
 		attachment := event.Blocks[1].Attachments.Attachments[0]
 		if attachment.ID != attachmentID || attachment.SizeBytes != 12 || attachment.URL == "" {
@@ -200,7 +207,8 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		t.Fatalf("invalid roles: %+v", messages)
 	}
 	if len(messages[0].Blocks) != 2 || messages[0].Blocks[0].Text.Message != "Question" ||
-		len(messages[1].Blocks) != 3 || messages[1].Blocks[0].Text.Message != "Answer" {
+		len(messages[1].Blocks) != 4 || messages[1].Blocks[0].Text.Message != "Answer" ||
+		messages[1].Blocks[3].Map == nil {
 		t.Fatalf("invalid history blocks: %+v", messages)
 	}
 	if messages[1].Blocks[1].Attachments.Attachments[0].URL == first.Blocks[1].Attachments.Attachments[0].URL {
@@ -221,5 +229,39 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	messages, err = history.History(ctx, accepted.ChatID.String(), userID, accepted.MessageID.String())
 	if err != nil || len(messages) != 1 || messages[0].ID != first.MessageID {
 		t.Fatalf("cursor: %+v %v", messages, err)
+	}
+
+	followUp, err := request.Create(ctx, requestservice.Input{
+		UserID: userID, ChatID: accepted.ChatID.String(), Message: "Follow-up",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	newChat, err := request.Create(ctx, requestservice.Input{UserID: userID, Message: "New chat"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := agent.Dispatch(ctx); err != nil || len(publisher.tasks) != 3 {
+		t.Fatalf("dispatch after follow-up: %d tasks, %v", len(publisher.tasks), err)
+	}
+	for _, published := range publisher.tasks[1:] {
+		var next models.AgentRequest
+		if err := json.Unmarshal(published.Payload, &next); err != nil {
+			t.Fatal(err)
+		}
+		switch next.MessageID {
+		case followUp.MessageID:
+			if len(next.History) != 2 ||
+				next.History[0] != (models.DialogueTurn{Role: "user", Message: "Question"}) ||
+				next.History[1] != (models.DialogueTurn{Role: "assistant", Message: "Answer\nFinal paragraph"}) {
+				t.Fatalf("unexpected follow-up context: %+v", next.History)
+			}
+		case newChat.MessageID:
+			if len(next.History) != 0 {
+				t.Fatalf("new chat inherited previous context: %+v", next.History)
+			}
+		default:
+			t.Fatalf("unexpected task: %s", next.MessageID)
+		}
 	}
 }

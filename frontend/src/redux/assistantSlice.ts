@@ -3,27 +3,13 @@ import {
   createSlice,
   type PayloadAction,
 } from '@reduxjs/toolkit'
-
-export type Audience = 'applicant' | 'student'
-export type MessageRole = 'user' | 'assistant'
-
-export interface ChatSource {
-  title: string
-  url: string
-  section?: string
-}
-
-export interface ChatMessage {
-  id: string
-  role: MessageRole
-  content: string
-  sources?: ChatSource[]
-  followUps?: string[]
-}
+import type { AcceptedRequest } from '../api/api'
+import type { ChatMessage } from '../api/messageBlocks'
 
 interface AssistantState {
   sessionId: string
-  audience: Audience
+  chatId: string | null
+  pendingMessageId: string | null
   messages: ChatMessage[]
   status: 'idle' | 'loading' | 'failed'
   error: string | null
@@ -31,7 +17,8 @@ interface AssistantState {
 
 const initialState: AssistantState = {
   sessionId: crypto.randomUUID(),
-  audience: 'applicant',
+  chatId: null,
+  pendingMessageId: null,
   messages: [],
   status: 'idle',
   error: null,
@@ -43,11 +30,10 @@ const assistantSlice = createSlice({
   name: 'assistant',
   initialState,
   reducers: {
-    setAudience(state, action: PayloadAction<Audience>) {
-      state.audience = action.payload
-    },
     startNewSession(state, action: PayloadAction<string>) {
       state.sessionId = action.payload
+      state.chatId = null
+      state.pendingMessageId = null
       state.messages = []
       state.status = 'idle'
       state.error = null
@@ -57,8 +43,15 @@ const assistantSlice = createSlice({
       state.status = 'loading'
       state.error = null
     },
+    requestAccepted(state, action: PayloadAction<AcceptedRequest>) {
+      state.chatId = action.payload.chatId
+      state.pendingMessageId = action.payload.messageId
+    },
     answerReceived(state, action: PayloadAction<ChatMessage>) {
-      state.messages.push(action.payload)
+      if (!state.messages.some((message) => message.id === action.payload.id)) {
+        state.messages.push(action.payload)
+      }
+      state.pendingMessageId = null
       state.status = 'idle'
       state.error = null
     },
@@ -68,7 +61,8 @@ const assistantSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(requestAnswer, (state) => {
+    builder.addCase(requestAnswer, (state, action) => {
+      if (state.sessionId !== action.payload || state.messages.at(-1)?.role !== 'user') return
       state.status = 'loading'
       state.error = null
     })

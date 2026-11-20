@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"university-agent/internal/models"
 	service "university-agent/internal/services/request"
 
 	"github.com/google/uuid"
@@ -41,6 +42,33 @@ func (r *Repository) Save(ctx context.Context, record service.Record) error {
 		return fmt.Errorf("save chat: %w", err)
 	}
 
+	if !record.NewChat {
+		rows, err := tx.Query(ctx, `
+			SELECT role, left(btrim(body), 500) AS message
+			FROM (
+				SELECT role, created_at, id, COALESCE((
+					SELECT string_agg(part->>'message', chr(10) ORDER BY block_index)
+					FROM jsonb_array_elements(blocks) WITH ORDINALITY AS parts(part, block_index)
+					WHERE part->>'type' = 'text'
+				), content) AS body
+				FROM messages WHERE chat_id = $1
+				ORDER BY created_at DESC, id DESC LIMIT 8
+			) AS recent
+			WHERE btrim(body) <> ''
+			ORDER BY created_at, id`, record.Result.ChatID)
+		if err != nil {
+			return fmt.Errorf("load conversation for agent: %w", err)
+		}
+		record.Task.History, err = pgx.CollectRows(rows, pgx.RowToStructByName[models.DialogueTurn])
+		if err != nil {
+			return fmt.Errorf("read conversation for agent: %w", err)
+		}
+	}
+	task, err := json.Marshal(record.Task)
+	if err != nil {
+		return fmt.Errorf("encode agent request: %w", err)
+	}
+
 	blocks, err := json.Marshal(record.Blocks)
 	if err != nil {
 		return err
@@ -68,7 +96,7 @@ func (r *Repository) Save(ctx context.Context, record service.Record) error {
 
 	_, err = tx.Exec(ctx,
 		`INSERT INTO agent_request_outbox (message_id, payload) VALUES ($1, $2)`,
-		record.Result.MessageID, record.Task,
+		record.Result.MessageID, task,
 	)
 	if err != nil {
 		return fmt.Errorf("save agent task: %w", err)

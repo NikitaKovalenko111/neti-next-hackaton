@@ -1,19 +1,25 @@
+import json
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
-from app.models import Attachment
+from app.models import Attachment, DialogueTurn
 from app.services.agent import AgentService
 
 
 async def test_response_matches_backend_blocks_contract(request_message):
     model = AsyncMock()
-    model.generate.return_value = "Уточните, пожалуйста, название корпуса."
+    model.generate.return_value = (
+        '{"audience":"unknown","answer":"Уточните, пожалуйста, название корпуса."}'
+    )
 
     response = await AgentService(model).process(request_message)
 
     assert response.model_dump(mode="json") == {
         "request_message_id": str(request_message.message_id),
-        "blocks": [{"type": "text", "message": "Уточните, пожалуйста, название корпуса."}],
+        "blocks": [
+            {"type": "text", "message": "Уточните, пожалуйста, название корпуса.",
+             "audience": "unknown"}
+        ],
     }
     assert "нет базы знаний" in model.generate.call_args.args[0]
 
@@ -30,7 +36,9 @@ async def test_attachments_are_metadata_only(request_message):
         )
     ]
     model = AsyncMock()
-    model.generate.return_value = "Опишите, пожалуйста, вопрос текстом."
+    model.generate.return_value = (
+        '{"audience":"unknown","answer":"Опишите, пожалуйста, вопрос текстом."}'
+    )
 
     await AgentService(model).process(request_message)
 
@@ -40,7 +48,7 @@ async def test_attachments_are_metadata_only(request_message):
 
 async def test_redelivery_uses_cached_answer(request_message):
     model = AsyncMock()
-    model.generate.return_value = "Answer"
+    model.generate.return_value = '{"audience":"unknown","answer":"Answer"}'
     service = AgentService(model)
 
     first = await service.process(request_message)
@@ -52,7 +60,7 @@ async def test_redelivery_uses_cached_answer(request_message):
 
 async def test_cache_is_bounded(request_message):
     model = AsyncMock()
-    model.generate.return_value = "Answer"
+    model.generate.return_value = '{"audience":"unknown","answer":"Answer"}'
     service = AgentService(model, cache_size=1)
 
     await service.process(request_message)
@@ -61,3 +69,41 @@ async def test_cache_is_bounded(request_message):
 
     assert len(service.responses) == 1
     assert request_message.message_id not in service.responses
+
+
+async def test_previous_user_turn_informs_audience_and_map(request_message):
+    request_message.history = [DialogueTurn(role="user", message="Я учусь на первом курсе.")]
+    request_message.message = "Как добраться до главного корпуса?"
+    model = AsyncMock()
+    model.generate.return_value = (
+        '{"audience":"student","answer":"Вот главный корпус.",'
+        '"map_point":"uust_main_building"}'
+    )
+
+    response = await AgentService(model).process(request_message)
+
+    system, prompt = model.generate.call_args.args
+    assert "Уфимского университета" in system
+    assert json.loads(prompt)["предыдущие реплики"] == [
+        {"role": "user", "message": "Я учусь на первом курсе."}
+    ]
+    assert model.generate.call_args.kwargs["response_schema"]["properties"]["audience"]["enum"] == [
+        "unknown", "applicant", "student"
+    ]
+    assert response.blocks[0].audience == "student"
+    assert response.blocks[1].type == "map"
+    assert response.blocks[1].address == "Уфа, ул. Заки Валиди, 32"
+
+
+async def test_non_navigation_question_does_not_get_a_map(request_message):
+    request_message.message = "Какие документы нужны для поступления?"
+    model = AsyncMock()
+    model.generate.return_value = (
+        '{"audience":"applicant","answer":"Посмотрите правила приёма.",'
+        '"map_point":"uust_main_building"}'
+    )
+
+    response = await AgentService(model).process(request_message)
+
+    assert len(response.blocks) == 1
+    assert response.blocks[0].audience == "applicant"

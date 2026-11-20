@@ -4,6 +4,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+AnswerText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=900)]
+Audience = Literal["unknown", "applicant", "student"]
 
 
 class Attachment(BaseModel):
@@ -14,12 +16,18 @@ class Attachment(BaseModel):
     content_type: NonEmptyText
 
 
+class DialogueTurn(BaseModel):
+    role: Literal["user", "assistant"]
+    message: NonEmptyText
+
+
 class AgentRequest(BaseModel):
     message_id: UUID
     chat_id: UUID
     user_id: UUID
     message: str = ""
     attachments: list[Attachment] = Field(default_factory=list)
+    history: list[DialogueTurn] = Field(default_factory=list, max_length=8)
 
     @field_validator("message_id", "chat_id", "user_id")
     @classmethod
@@ -40,8 +48,23 @@ class AgentRequest(BaseModel):
 class TextBlock(BaseModel):
     type: Literal["text"] = "text"
     message: NonEmptyText
+    audience: Audience = "unknown"
+
+
+class MapBlock(BaseModel):
+    type: Literal["map"] = "map"
+    lat: float = Field(ge=-85, le=85, allow_inf_nan=False)
+    lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    title: NonEmptyText
+    address: NonEmptyText
+
+
+class AssistantReply(BaseModel):
+    audience: Audience
+    answer: AnswerText
+    map_point: Literal["none", "uust_main_building"] = "none"
 
 
 class AgentResponse(BaseModel):
     request_message_id: UUID
-    blocks: list[TextBlock] = Field(min_length=1)
+    blocks: list[TextBlock | MapBlock] = Field(min_length=1)

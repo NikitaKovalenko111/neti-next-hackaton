@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"mime"
 	"strings"
 
@@ -40,12 +41,17 @@ func (s *Service) Validate(ctx context.Context, blocks []models.Block) error {
 
 	for _, block := range blocks {
 		switch {
-		case block.Text != nil && block.Attachments == nil:
+		case block.Text != nil && block.Attachments == nil && block.Map == nil:
 			if strings.TrimSpace(block.Text.Message) == "" {
 				return fmt.Errorf("%w: text message is required", ErrInvalid)
 			}
+			switch block.Text.Audience {
+			case "", "unknown", "applicant", "student":
+			default:
+				return fmt.Errorf("%w: unsupported audience", ErrInvalid)
+			}
 
-		case block.Attachments != nil && block.Text == nil:
+		case block.Attachments != nil && block.Text == nil && block.Map == nil:
 			if len(block.Attachments.Attachments) == 0 {
 				return fmt.Errorf("%w: attachments must not be empty", ErrInvalid)
 			}
@@ -75,6 +81,12 @@ func (s *Service) Validate(ctx context.Context, blocks []models.Block) error {
 				}
 				attachment.SizeBytes = size
 				attachment.URL = ""
+			}
+
+		case block.Map != nil && block.Text == nil && block.Attachments == nil:
+			if block.Map.Lat == nil || block.Map.Lon == nil ||
+				!(math.Abs(*block.Map.Lat) <= 85 && math.Abs(*block.Map.Lon) <= 180) {
+				return fmt.Errorf("%w: valid map coordinates are required", ErrInvalid)
 			}
 
 		default:

@@ -8,7 +8,13 @@ class OllamaClient:
         self.client = client
         self.settings = settings
 
-    async def generate(self, system_prompt: str, user_prompt: str) -> str:
+    async def generate(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        *,
+        response_schema: dict[str, object] | None = None,
+    ) -> str:
         response = await self.client.post(
             "/api/chat",
             json={
@@ -19,7 +25,9 @@ class OllamaClient:
                 ],
                 "stream": False,
                 "think": False,
+                **({"format": response_schema} if response_schema is not None else {}),
                 "options": {
+                    "temperature": 0,
                     "num_predict": self.settings.ollama_num_predict,
                     "num_ctx": self.settings.ollama_num_ctx,
                 },

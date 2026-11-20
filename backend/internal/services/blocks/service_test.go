@@ -38,6 +38,9 @@ func TestValidateBlocks(t *testing.T) {
 	}{
 		{"no blocks", `[]`},
 		{"blank text", `[{"type":"text","message":"  "}]`},
+		{"unsupported audience", `[{"type":"text","message":"Hello","audience":"staff"}]`},
+		{"missing latitude", `[{"type":"map","lon":55}]`},
+		{"invalid longitude", `[{"type":"map","lat":54,"lon":181}]`},
 		{"no attachments", `[{"type":"attachments","attachments":[]}]`},
 		{"missing attachment fields", `[{"type":"attachments","attachments":[{}]}]`},
 	} {

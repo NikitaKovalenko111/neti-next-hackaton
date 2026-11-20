@@ -2,38 +2,31 @@ import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 
 import { useDispatch, useSelector } from 'react-redux'
 import campusOrbit from '../../assets/campus-orbit.webp'
 import { AssistantIcon, AssistantMark } from '../../components/assistant/AssistantIcon'
-import { IdleSnow } from '../../components/assistant/IdleSnow'
+import { IdleSeason } from '../../components/assistant/IdleSeason'
 import { MessageBubble } from '../../components/assistant/MessageBubble'
 import { ProjectHeader, universityUrl } from '../../components/project-header/ProjectHeader'
 import { UniversityMark } from '../../components/project-header/UniversityMark'
 import {
   assistantActions,
   requestAnswer,
-  type Audience,
 } from '../../redux/assistantSlice'
 import type { AppDispatch, RootState } from '../../redux/store'
 
-const prompts = {
-  applicant: [
-    { label: 'Поступление', question: 'Что нужно для поступления на бакалавриат?', icon: 'cap' },
-    { label: 'Направления', question: 'Какие ИТ-направления есть в УУНиТ?', icon: 'blocks' },
-    { label: 'Общежитие', question: 'Как получить место в общежитии?', icon: 'home' },
-  ],
-  student: [
-    { label: 'Учебный план', question: 'Где найти учебный план моей программы?', icon: 'book' },
-    { label: 'Цифровые сервисы', question: 'Какие сервисы доступны студентам?', icon: 'blocks' },
-    { label: 'Поддержка', question: 'Куда обратиться по вопросу обучения?', icon: 'chat' },
-  ],
-} as const
+const prompts = [
+  { label: 'Поступление', question: 'Что нужно для поступления на бакалавриат?', icon: 'cap' },
+  { label: 'Учебный план', question: 'Где найти учебный план моей программы?', icon: 'book' },
+  { label: 'Как добраться', question: 'Покажи, как добраться до главного корпуса УУНиТ.', icon: 'globe' },
+] as const
 
-const audiences = [
-  { id: 'applicant', label: 'Я абитуриент', icon: 'cap' },
-  { id: 'student', label: 'Я студент', icon: 'book' },
-] as const satisfies ReadonlyArray<{ id: Audience; label: string; icon: 'cap' | 'book' }>
+const audienceLabels = {
+  unknown: 'Определю по сообщениям',
+  applicant: 'Абитуриент',
+  student: 'Студент',
+}
 
 export function AssistantPage() {
   const dispatch = useDispatch<AppDispatch>()
-  const { audience, messages, sessionId, status, error } = useSelector(
+  const { messages, sessionId, status, error, pendingMessageId } = useSelector(
     (state: RootState) => state.assistant,
   )
   const [draft, setDraft] = useState('')
@@ -41,6 +34,9 @@ export function AssistantPage() {
   const composerRef = useRef<HTMLTextAreaElement>(null)
   const hasMessages = messages.length > 0
   const isLoading = status === 'loading'
+  const canSend = !isLoading && pendingMessageId === null
+  const audience = messages.findLast((message) => message.role === 'assistant')
+    ?.blocks.find((block) => block.type === 'text')?.audience ?? 'unknown'
 
   useEffect(() => {
     const transcript = transcriptRef.current
@@ -49,13 +45,13 @@ export function AssistantPage() {
 
   function submitPrompt(value: string) {
     const content = value.trim()
-    if (!content || isLoading) return
+    if (!content || !canSend) return
 
     dispatch(
       assistantActions.addUserMessage({
         id: crypto.randomUUID(),
         role: 'user',
-        content,
+        blocks: [{ type: 'text', message: content }],
       }),
     )
     dispatch(requestAnswer(sessionId))
@@ -105,35 +101,11 @@ export function AssistantPage() {
 
           <div className="sidebar-section">
             <p className="section-label" id="audience-label">Ваш профиль</p>
-            <div className="audience-switch" role="group" aria-labelledby="audience-label">
-              {audiences.map((option) => (
-                <button
-                  aria-pressed={audience === option.id}
-                  className="audience-option"
-                  key={option.id}
-                  onClick={() => dispatch(assistantActions.setAudience(option.id))}
-                  type="button"
-                >
-                  <AssistantIcon name={option.icon} />
-                  {option.label}
-                </button>
-              ))}
+            <div className="profile-card" aria-labelledby="audience-label" role="status">
+              <AssistantIcon name={audience === 'student' ? 'book' : audience === 'applicant' ? 'cap' : 'chat'} />
+              <span>{audienceLabels[audience]}</span>
               <UniversityMark className="audience-watermark" />
             </div>
-          </div>
-
-          <div className="sidebar-bottom">
-            <nav aria-label="Ссылки УУНиТ">
-              <p className="section-label">Полезные ссылки</p>
-              <a href={universityUrl + 'admission/'} target="_blank" rel="noreferrer">
-                <AssistantIcon name="cap" />
-                Приёмная комиссия
-              </a>
-              <a href={universityUrl + 'digital-services/'} target="_blank" rel="noreferrer">
-                <AssistantIcon name="blocks" />
-                Сервисы УУНиТ
-              </a>
-            </nav>
           </div>
         </div>
       </aside>
@@ -153,7 +125,7 @@ export function AssistantPage() {
                   key={message.id}
                   message={message}
                   onFollowUp={submitPrompt}
-                  isLoading={isLoading}
+                  isLoading={!canSend}
                 />
               ))}
               {isLoading && (
@@ -179,7 +151,7 @@ export function AssistantPage() {
               <section className="suggestions" aria-labelledby="suggestions-title">
                 <h2 id="suggestions-title">С чего начать</h2>
                 <div className="prompt-grid">
-                  {prompts[audience].map(({ label, question, icon }) => (
+                  {prompts.map(({ label, question, icon }) => (
                     <button
                       className="prompt-card"
                       key={label}
@@ -221,7 +193,7 @@ export function AssistantPage() {
               <span id="composer-hint"><kbd>Enter</kbd> отправить · <kbd>Shift + Enter</kbd> новая строка</span>
               <button
                 className="send-button"
-                disabled={!draft.trim() || isLoading}
+                disabled={!draft.trim() || !canSend}
                 type="submit"
               >
                 Отправить
@@ -229,10 +201,23 @@ export function AssistantPage() {
               </button>
             </div>
           </form>
-          <p className="composer-note"><AssistantIcon name="link" /> Ссылки на источники появятся под ответом</p>
+          {hasMessages ? (
+            <p className="composer-note"><AssistantIcon name="link" /> Ссылки на источники появятся под ответом</p>
+          ) : (
+            <nav aria-label="Полезные ссылки УУНиТ" className="welcome-links">
+              <a href={universityUrl + 'admission/'} target="_blank" rel="noreferrer">
+                <AssistantIcon name="cap" />
+                Приёмная комиссия
+              </a>
+              <a href={universityUrl + 'digital-services/'} target="_blank" rel="noreferrer">
+                <AssistantIcon name="blocks" />
+                Сервисы УУНиТ
+              </a>
+            </nav>
+          )}
         </div>
       </main>
-      {!isLoading && <IdleSnow />}
+      {!isLoading && <IdleSeason />}
     </div>
   )
 }

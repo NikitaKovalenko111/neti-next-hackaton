@@ -31,7 +31,8 @@ async def test_real_rabbitmq_request_response_roundtrip(request_message):
 
     def respond(request):
         generations.append(json.loads(request.content))
-        return httpx.Response(200, json={"message": {"content": "Test answer"}, "done": True})
+        content = '{"audience":"unknown","answer":"Test answer"}'
+        return httpx.Response(200, json={"message": {"content": content}, "done": True})
 
     async with httpx.AsyncClient(
         base_url=str(settings.ollama_base_url), transport=httpx.MockTransport(respond)

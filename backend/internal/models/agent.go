@@ -16,12 +16,18 @@ type AgentAttachment struct {
 	URL         string    `json:"url,omitempty"`
 }
 
+type DialogueTurn struct {
+	Role    string `json:"role"`
+	Message string `json:"message"`
+}
+
 type AgentRequest struct {
 	MessageID   uuid.UUID         `json:"message_id"`
 	ChatID      uuid.UUID         `json:"chat_id"`
 	UserID      uuid.UUID         `json:"user_id"`
 	Message     string            `json:"message"`
 	Attachments []AgentAttachment `json:"attachments"`
+	History     []DialogueTurn    `json:"history,omitempty"`
 }
 
 type AgentResponse struct {

@@ -23,7 +23,7 @@ def incoming(request, reply_to=None):
 async def test_ack_follows_confirmed_response_publication(settings, request_message):
     events = []
     model = AsyncMock()
-    model.generate.return_value = "Answer"
+    model.generate.return_value = '{"audience":"student","answer":"Answer"}'
     worker = RabbitWorker(settings, AgentService(model))
     message = incoming(request_message, reply_to="custom_responses")
 
@@ -51,7 +51,7 @@ async def test_ack_follows_confirmed_response_publication(settings, request_mess
 
 async def test_publish_failure_requeues_and_reuses_answer(settings, request_message):
     model = AsyncMock()
-    model.generate.return_value = "Answer"
+    model.generate.return_value = '{"audience":"unknown","answer":"Answer"}'
     worker = RabbitWorker(settings, AgentService(model))
     publish = AsyncMock(side_effect=[RuntimeError("broker disconnected"), None])
     worker.channel = SimpleNamespace(default_exchange=SimpleNamespace(publish=publish))
