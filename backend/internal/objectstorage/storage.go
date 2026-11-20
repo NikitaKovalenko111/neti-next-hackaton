@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"time"
 
 	"university-agent/internal/config"
@@ -14,11 +15,42 @@ import (
 
 type Storage struct {
 	client *minio.Client
+	signer *minio.Client
 	bucket string
 }
 
 func Wrap(client *minio.Client, bucket string) *Storage {
-	return &Storage{client: client, bucket: bucket}
+	return &Storage{client: client, signer: client, bucket: bucket}
+}
+
+func NewStorage(client *minio.Client, cfg config.Config) (*Storage, error) {
+	storage := Wrap(client, cfg.MinIOBucket)
+	if cfg.MinIOPublicEndpoint == "" {
+		return storage, nil
+	}
+
+	endpoint, err := url.Parse(cfg.MinIOPublicEndpoint)
+	if err != nil || endpoint.Host == "" ||
+		(endpoint.Scheme != "http" && endpoint.Scheme != "https") ||
+		(endpoint.Path != "" && endpoint.Path != "/") || endpoint.User != nil ||
+		endpoint.RawQuery != "" || endpoint.Fragment != "" {
+		return nil, fmt.Errorf("MINIO_PUBLIC_ENDPOINT must be an http(s) URL without a path, credentials or query")
+	}
+
+	region := cfg.MinIORegion
+	if region == "" {
+		region = "us-east-1"
+	}
+	storage.signer, err = minio.New(endpoint.Host, &minio.Options{
+		Creds:  credentials.NewStaticV4(cfg.MinIOAccessKey, cfg.MinIOSecretKey, ""),
+		Secure: endpoint.Scheme == "https",
+		Region: region,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("create public MinIO signer: %w", err)
+	}
+
+	return storage, nil
 }
 
 func (s *Storage) Put(ctx context.Context, key string, reader io.Reader, size int64, contentType string) error {
@@ -44,7 +76,7 @@ func (s *Storage) Stat(ctx context.Context, bucket, key string) (int64, bool, er
 }
 
 func (s *Storage) URL(ctx context.Context, bucket, key string) (string, error) {
-	url, err := s.client.PresignedGetObject(ctx, bucket, key, 15*time.Minute, nil)
+	url, err := s.signer.PresignedGetObject(ctx, bucket, key, 15*time.Minute, nil)
 	if err != nil {
 		return "", err
 	}
@@ -56,6 +88,7 @@ func New(ctx context.Context, cfg config.Config) (*minio.Client, error) {
 	client, err := minio.New(cfg.MinIOEndpoint, &minio.Options{
 		Creds:  credentials.NewStaticV4(cfg.MinIOAccessKey, cfg.MinIOSecretKey, ""),
 		Secure: cfg.MinIOSecure,
+		Region: cfg.MinIORegion,
 	})
 	if err != nil {
 		return nil, err

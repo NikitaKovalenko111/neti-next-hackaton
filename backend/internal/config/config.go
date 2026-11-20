@@ -10,6 +10,8 @@ type Config struct {
 	HTTPAddress           string
 	PostgresURL           string
 	MinIOEndpoint         string
+	MinIOPublicEndpoint   string
+	MinIORegion           string
 	MinIOAccessKey        string
 	MinIOSecretKey        string
 	MinIOBucket           string
@@ -24,6 +26,8 @@ func Load() (Config, error) {
 		HTTPAddress:           env("HTTP_ADDRESS", ":8080"),
 		PostgresURL:           env("POSTGRES_URL", "postgres://postgres:postgres@localhost:5432/university?sslmode=disable"),
 		MinIOEndpoint:         env("MINIO_ENDPOINT", "localhost:9000"),
+		MinIOPublicEndpoint:   env("MINIO_PUBLIC_ENDPOINT", ""),
+		MinIORegion:           env("MINIO_REGION", "us-east-1"),
 		MinIOAccessKey:        env("MINIO_ACCESS_KEY", "minioadmin"),
 		MinIOSecretKey:        env("MINIO_SECRET_KEY", "minioadmin"),
 		MinIOBucket:           env("MINIO_BUCKET", "images"),
