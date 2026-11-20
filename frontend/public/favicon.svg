@@ -1,0 +1,7 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="-4 -8 108 108">
+  <style>
+    svg { color: #5600cf; }
+    @media (prefers-color-scheme: dark) { svg { color: #b696ff; } }
+  </style>
+  <path id="uust-mark" fill="currentColor" d="M0 1.8C0 .2 1.95-.62 3.08 .52L50.22 51 96.93 .52C98.06-.62 100 .2 100 1.8v53.25c0 1.35-.72 2.6-1.91 3.24L32.83 91.21c-1.2 .61-2.58-.22-2.58-1.58V73.88c0-1.11 .43-2.17 1.2-2.97l12.88-13.6H1.8A1.8 1.8 0 0 1 0 55.51Z"/>
+</svg>
