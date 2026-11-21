@@ -1,11 +1,11 @@
 services:
   postgres:
     ports: !override
-      - "0.0.0.0:${COLAB_POSTGRES_PORT:-15432}:5432"
+      - "0.0.0.0:${COLAB_POSTGRES_PORT:-5173}:5432"
 
   rabbitmq:
     ports: !override
-      - "0.0.0.0:${COLAB_RABBITMQ_PORT:-25673}:5672"
+      - "0.0.0.0:${COLAB_RABBITMQ_PORT:-5672}:5672"
 
   backend:
     ports: !override
