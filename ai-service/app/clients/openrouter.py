@@ -4,6 +4,11 @@ from app.config import Settings
 
 
 def openrouter_http(settings: Settings, *, require_key: bool = True) -> httpx.AsyncClient:
+    if settings.ollama_base_url:
+        return httpx.AsyncClient(
+            base_url=str(settings.ollama_base_url), timeout=settings.openrouter_timeout_seconds
+        )
+
     key = settings.openrouter_api_key.get_secret_value().strip()
     if require_key and not key:
         raise ValueError("Set OPENROUTER_API_KEY before starting the AI service or indexer")
@@ -29,16 +34,22 @@ class OpenRouterClient:
         tool_choice: str | None = None,
         response_format: dict | None = None,
     ) -> dict:
-        request = {
+        ollama = self.settings.ollama_base_url is not None
+        request: dict = {
             "model": self.settings.openrouter_model,
             "messages": messages,
             "stream": False,
             "max_tokens": self.settings.openrouter_max_tokens,
-            "provider": {"require_parameters": True},
         }
-        if tools:
+        if ollama:
+            request.update(model=self.settings.ollama_model, temperature=0.2)
+        else:
+            request["provider"] = {"require_parameters": True}
+            if self.settings.openrouter_model.startswith("qwen/qwen3.5-"):
+                request.update(temperature=0.2, reasoning={"enabled": False})
+        if tools and not (ollama and tool_choice == "none"):
             request["tools"] = tools
-        if tool_choice is not None:
+        if tool_choice is not None and not ollama:
             request["tool_choice"] = tool_choice
 
         if response_format is not None:
@@ -69,6 +80,12 @@ class OpenRouterClient:
 
     async def is_ready(self) -> bool:
         try:
+            if self.settings.ollama_base_url:
+                response = await self.client.get("models", timeout=3)
+                response.raise_for_status()
+                model_ids = {model["id"] for model in response.json()["data"]}
+                return {self.settings.ollama_model, self.settings.embedding_model} <= model_ids
+
             response = await self.client.get("key", timeout=3)
             response.raise_for_status()
             return isinstance(response.json()["data"], dict)

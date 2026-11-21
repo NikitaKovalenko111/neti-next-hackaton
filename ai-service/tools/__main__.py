@@ -19,7 +19,7 @@ async def run_tool(name: str, arguments: dict) -> dict:
             name,
             arguments,
             embedding_client=client,
-            embedding_model=settings.openrouter_embedding_model,
+            embedding_model=settings.embedding_model,
         )
 
 

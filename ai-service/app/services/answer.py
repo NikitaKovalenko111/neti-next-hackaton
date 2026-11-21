@@ -4,6 +4,9 @@ from urllib.parse import urlsplit
 
 from app.models import Audience, MapPoint, UserAnswer
 
+ADMISSION_GUIDE = "https://uust.ru/admission/"
+STUDENT_SERVICES = "https://uust.ru/digital-services/"
+
 ANSWER_FORMAT = {
     "type": "json_schema",
     "json_schema": {

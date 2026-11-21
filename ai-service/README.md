@@ -136,6 +136,31 @@ docker compose run --rm --no-deps rag-index python -m app.index_campus \
 
 В одном ответе агент выполняет до четырёх раундов поиска и восьми вызовов. После лимита модель формирует ответ из собранных данных. [Каталог инструментов, параметры и примеры вызовов](tools/README.md).
 
+## Локальный запуск с Ollama
+
+Для запуска без ключа OpenRouter поднимите инфраструктуру и Go-бэкенд командой `docker compose up -d --build backend` из корня. Затем скачайте модели в Ollama:
+
+```sh
+ollama pull llama3.2:3b
+ollama pull qwen3-embedding:0.6b
+```
+
+Укажите эти параметры в `ai-service/.env` для подключения к контейнерам с настройками из корневого `.env.example`:
+
+```env
+OLLAMA_BASE_URL=http://127.0.0.1:11434/v1/
+RABBITMQ_URL=amqp://university:university@127.0.0.1:5672/
+```
+
+Из каталога `ai-service` в Python-окружении проекта импортируйте справочник, постройте индекс и запустите сервис:
+
+```sh
+python -m app.index_campus
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+Можно переопределить модели через `OLLAMA_MODEL` и `OLLAMA_EMBEDDING_MODEL`. Для индекса нужна модель с поддержкой 1024-мерных векторов. Без `OLLAMA_BASE_URL` сервис использует OpenRouter.
+
 ## Проверка
 
 ```sh

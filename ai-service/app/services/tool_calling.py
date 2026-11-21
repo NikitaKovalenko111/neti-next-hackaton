@@ -9,7 +9,9 @@ from app.clients.openrouter import OpenRouterClient, answer_text
 from app.config import Settings
 from app.models import UserAnswer
 from app.services.answer import (
+    ADMISSION_GUIDE,
     ANSWER_FORMAT,
+    STUDENT_SERVICES,
     collect_source_urls,
     model_tool_data,
     parse_user_answer,
@@ -35,7 +37,7 @@ class DatabaseTools:
                     name,
                     arguments,
                     embedding_client=self.client,
-                    embedding_model=self.settings.openrouter_embedding_model,
+                    embedding_model=self.settings.embedding_model,
                 )
         except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError, TimeoutError):
             logger.warning("PostgreSQL unavailable for tool %s", name, exc_info=True)
@@ -56,13 +58,12 @@ class ToolCallingAgent:
             {"role": "user", "content": user_prompt},
         ]
         remaining = MAX_TOOL_CALLS
-        allowed_sources: set[str] = set()
+        allowed_sources = {ADMISSION_GUIDE, STUDENT_SERVICES}
 
         for _ in range(MAX_TOOL_ROUNDS):
             message = await self.model.chat(messages, self.tools)
             calls = message.get("tool_calls") or []
             if not calls:
-                messages.append({"role": "assistant", "content": answer_text(message)})
                 break
             if not isinstance(calls, list):
                 raise ValueError("OpenRouter returned invalid tool calls")
@@ -81,18 +82,22 @@ class ToolCallingAgent:
                 "role": "user",
                 "content": (
                     "Заверши ответ по полученным данным. Если их мало, объясни, чего не хватает. "
+                    "Пиши полными предложениями на языке последнего сообщения пользователя. "
                     "Верни объект JSON. В message пиши ответ без ссылок на источники и раздела "
-                    "«Источники». В source верни массив ссылок из результатов инструментов, "
-                    "на которые опирается ответ. При отсутствии источников верни пустой массив. "
+                    "«Источники». В source верни массив использованных ссылок из результатов "
+                    "инструментов или официальных справочных страниц из системного сообщения. "
+                    "При отсутствии источников верни пустой массив. "
                     "Укажи в audience профиль по репликам пользователя, а в map_point — ID точки "
                     "только для запроса о её адресе или маршруте. Без точки укажи none."
                 ),
             }
         )
-        final = await self.model.chat(
-            messages, self.tools, tool_choice="none", response_format=ANSWER_FORMAT
-        )
-        if not final.get("tool_calls"):
+        for _ in range(2):
+            final = await self.model.chat(
+                messages, self.tools, tool_choice="none", response_format=ANSWER_FORMAT
+            )
+            if final.get("tool_calls"):
+                continue
             try:
                 return parse_user_answer(answer_text(final), allowed_sources)
             except ValueError:

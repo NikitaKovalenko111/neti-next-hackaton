@@ -106,3 +106,24 @@ async def test_non_navigation_question_does_not_get_a_map(request_message):
 
     assert len(response.blocks) == 1
     assert response.blocks[0].audience == "applicant"
+
+
+async def test_explicit_main_building_route_gets_map_even_if_model_omits_it(request_message):
+    request_message.message = "Я студент. Как добраться до главного корпуса УУНиТ?"
+    model = AsyncMock()
+    model.generate.return_value = UserAnswer(message="Главный корпус на Заки Валиди, 32.")
+
+    response = await AgentService(model).process(request_message)
+
+    assert response.blocks[0].source == ["https://uust.ru/page-contacts/"]
+    assert response.blocks[1].type == "map"
+
+
+async def test_explicit_route_to_branch_does_not_get_ufa_map(request_message):
+    request_message.message = "Как добраться до главного корпуса УУНиТ в Бирске?"
+    model = AsyncMock()
+    model.generate.return_value = UserAnswer(message="Какой корпус вас интересует?")
+
+    response = await AgentService(model).process(request_message)
+
+    assert len(response.blocks) == 1

@@ -72,6 +72,7 @@ async def test_agent_returns_answer_after_two_tool_rounds(settings, request_mess
         if len(calls) == 4:
             assert payload["response_format"]["type"] == "json_schema"
             assert payload["tool_choice"] == "none"
+            assert payload["messages"][-2]["role"] == "tool"
             schema = payload["response_format"]["json_schema"]["schema"]
             assert schema["properties"]["audience"]["enum"] == ["unknown", "applicant", "student"]
             return final_reply(
@@ -121,6 +122,23 @@ async def test_model_can_answer_without_querying_postgres(settings):
     ) as client:
         agent = ToolCallingAgent(OpenRouterClient(client, settings), execute)
         assert (await agent.generate("system", "Здравствуйте")).message == "Здравствуйте!"
+    execute.assert_not_awaited()
+
+
+async def test_agent_retries_a_malformed_final_answer():
+    model = AsyncMock()
+    model.chat.side_effect = [
+        {"content": "Draft text"},
+        {"content": '{"message":'},
+        final_reply("Здравствуйте!").json()["choices"][0]["message"],
+    ]
+    execute = AsyncMock()
+
+    answer = await ToolCallingAgent(model, execute).generate("system", "Привет!")
+
+    assert answer.message == "Здравствуйте!"
+    assert model.chat.await_count == 3
+    assert all(message["role"] != "assistant" for message in model.chat.await_args.args[0])
     execute.assert_not_awaited()
 
 

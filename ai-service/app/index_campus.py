@@ -92,7 +92,7 @@ async def main(args: argparse.Namespace) -> None:
             return
 
         async with openrouter_http(settings) as client:
-            model = settings.openrouter_embedding_model
+            model = settings.embedding_model
             if args.query is not None:
                 matches = await search_campus(
                     connection, client, model, args.query, args.branch, args.kind
