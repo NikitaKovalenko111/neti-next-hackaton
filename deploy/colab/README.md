@@ -2,8 +2,10 @@
 
 VPS хранит данные и обслуживает Go API и WebSocket. Colab запускает Python-воркер и
 Ollama. Воркер читает задания и публикует ответы в RabbitMQ, а через PostgreSQL
-читает и индексирует схему `rag`. Оба соединения проходят через SSH. Порты базы,
-RabbitMQ, MinIO и Go API в этой конфигурации слушают только `127.0.0.1` на VPS.
+читает и индексирует схему `rag`. Оба соединения проходят через существующий SSH на VPS. Compose запускает Go,
+PostgreSQL, RabbitMQ и MinIO без привязки к портам VPS. SSH перенаправляет
+соединения прямо на адреса контейнеров в bridge-сети. Этот режим рассчитан
+на Linux с обычным Docker Engine. [Доступ к контейнерам с Docker-хоста](https://docs.docker.com/engine/network/port-publishing/)
 
 Колаб подходит для демонстраций и временных сеансов. Для воркера, обслуживающего
 внешнее приложение, используйте среду, допускающую такой сценарий, например Colab
@@ -23,15 +25,26 @@ RabbitMQ, MinIO и Go API в этой конфигурации слушают т
 umask 077
 cp -n .env.example .env
 # Заполните секреты в .env перед запуском.
-docker compose up -d --build backend
+docker compose -f docker-compose.yml -f deploy/colab/compose.private.yml up -d --build backend
 docker compose ps -a
-curl -fsS http://127.0.0.1:8080/health
+curl -fsS http://10.243.17.12:8080/health
 ```
 
 Команда `up backend` поднимет PostgreSQL, `postgres-init`, RabbitMQ, MinIO и Go.
 В выводе `ps -a` для `postgres-init` ожидается `Exited (0)`. Для SSH-туннеля доступ
-из интернета нужен к SSH VPS. Порты базы, очереди и их панели оставьте закрытыми
-в файрволе.
+из интернета нужен к SSH VPS.
+
+| Сервис | Адрес внутри Docker |
+| --- | --- |
+| PostgreSQL | `10.243.17.10:5432` |
+| RabbitMQ | `10.243.17.11:5672` |
+| Go API | `10.243.17.12:8080` |
+| MinIO | `10.243.17.13:9000` |
+
+Если подсеть `10.243.17.0/24` пересекается с существующими сетями VPS, задайте
+свободный префикс из трёх октетов через `COLAB_NETWORK_PREFIX` в `.env`. Используйте
+тот же префикс в SSH-ключе, ноутбуке и командах проверки. При последующих обновлениях
+VPS запускайте `up` с теми же двумя файлами Compose.
 
 Создайте отдельного пользователя RabbitMQ для воркера. Команды ниже рассчитаны
 на стандартные очереди `agent_requests` и `agent_responses`. При других именах
@@ -75,11 +88,10 @@ sudo chmod 600 /home/colab-agent/.ssh/authorized_keys
 ```
 
 В `authorized_keys` добавьте одной строкой параметры и содержимое
-`~/.ssh/university-colab.pub`. Подставьте фактические порты `RABBITMQ_PORT` и
-`POSTGRES_PORT` из `.env`.
+`~/.ssh/university-colab.pub`. При смене `COLAB_NETWORK_PREFIX` подставьте новые адреса контейнеров.
 
 ```text
-restrict,port-forwarding,permitopen="127.0.0.1:5672",permitopen="127.0.0.1:5433",command="/bin/false" ssh-ed25519 AAAA... university-colab
+restrict,port-forwarding,permitopen="10.243.17.11:5672",permitopen="10.243.17.10:5432",command="/bin/false" ssh-ed25519 AAAA... university-colab
 ```
 
 В `/etc/ssh/sshd_config.d/90-colab-agent.conf` добавьте:
@@ -114,7 +126,7 @@ tar --exclude='__pycache__' --exclude='*.pyc' -czf /tmp/colab-worker.tar.gz \
   -C ai-service app tools pyproject.toml
 ```
 
-1. Загрузите [worker.ipynb](worker.ipynb) в Colab и выберите GPU. В первой ячейке укажите белый IPv4 или DNS VPS, SSH-порт и параметры сервисов из `.env`. Локальные порты Colab можно оставить по умолчанию.
+1. Загрузите [worker.ipynb](worker.ipynb) в Colab и выберите GPU. В первой ячейке укажите белый IPv4 или DNS VPS, SSH-порт и учётные данные сервисов из `.env`. Адреса контейнеров и локальные порты Colab можно оставить по умолчанию, если вы используете указанный префикс сети.
 2. На своём компьютере получите ключ в однострочном формате, затем добавьте секреты в панели **Secrets** и разрешите доступ этому ноутбуку.
 
    ```bash
@@ -140,10 +152,10 @@ tar --exclude='__pycache__' --exclude='*.pyc' -czf /tmp/colab-worker.tar.gz \
 
 ```bash
 USER_ID=$(python3 -c 'import uuid; print(uuid.uuid4())')
-RESPONSE=$(curl -fsS http://127.0.0.1:8080/request \
+RESPONSE=$(curl -fsS http://10.243.17.12:8080/request \
   -F "user_id=$USER_ID" -F 'message=Какой адрес главного корпуса УУНиТ в Уфе?')
 CHAT_ID=$(printf '%s' "$RESPONSE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["chat_id"])')
-curl -fsS "http://127.0.0.1:8080/chats/$CHAT_ID/messages?user_id=$USER_ID"
+curl -fsS "http://10.243.17.12:8080/chats/$CHAT_ID/messages?user_id=$USER_ID"
 ```
 
 Повторяйте последний GET, пока в истории не появится сообщение с
@@ -157,7 +169,7 @@ WebSocket и подписанные ссылки, если `MINIO_PUBLIC_ENDPOIN
 и совпадает с локальным портом.
 
 ```bash
-ssh -N -L 127.0.0.1:8080:127.0.0.1:8080 -L 127.0.0.1:9000:127.0.0.1:9000 deploy@VPS_HOST
+ssh -N -L 127.0.0.1:8080:10.243.17.12:8080 -L 127.0.0.1:9000:10.243.17.13:9000 deploy@VPS_HOST
 ```
 
 Публичное размещение браузерного клиента требует HTTPS и аутентификации на
