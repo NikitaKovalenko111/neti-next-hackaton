@@ -1,4 +1,5 @@
 import type { ChatMessage, MapBlock, MessageBlock } from '../../api/messageBlocks'
+import { campusMap } from '../../assets/campusMap'
 import { AssistantIcon, AssistantMark } from './AssistantIcon'
 
 interface MessageBubbleProps {
@@ -11,9 +12,11 @@ function RouteCard({ block }: { block: MapBlock }) {
   const { lat, lon } = block
   const point = `${lat},${lon}`
   const title = block.title || 'Точка на карте'
+  const isMainBuilding = Math.abs(lat - 54.720714) < .00001 && Math.abs(lon - 55.933422) < .00001
+  const openMap = `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=17/${lat}/${lon}`
   const map = new URL('https://www.openstreetmap.org/export/embed.html')
   map.search = new URLSearchParams({
-    bbox: [lon - .008, lat - .004, lon + .008, lat + .004].join(','),
+    bbox: [lon - .003, lat - .0015, lon + .003, lat + .0015].join(','),
     layer: 'mapnik',
     marker: point,
   }).toString()
@@ -22,16 +25,35 @@ function RouteCard({ block }: { block: MapBlock }) {
 
   return (
     <section className="message-map" aria-label={title}>
-      <iframe loading="lazy" referrerPolicy="no-referrer" src={map.href} title={title} />
       <div className="map-details">
+        <AssistantIcon name="pin" />
         <div>
           <strong>{title}</strong>
           {block.address && <p>{block.address}</p>}
         </div>
-        <a className="map-route" href={route.href} target="_blank" rel="noreferrer">
-          Построить маршрут
-        </a>
       </div>
+      {isMainBuilding ? (
+        <div className="campus-map">
+          <a aria-label={`Открыть на карте · ${title}`} className="campus-map-preview" href={openMap} rel="noreferrer" target="_blank">
+            <svg aria-hidden="true" viewBox="0 0 460 240" preserveAspectRatio="xMidYMid slice">
+              <path className="campus-map-greenery" d={campusMap.greenery} />
+              <path className="campus-map-paths" d={campusMap.paths} />
+              <path className="campus-map-streets" d={campusMap.streets} />
+              <path className="campus-map-buildings" d={campusMap.buildings} />
+              <path className="campus-map-building" d={campusMap.mainBuilding} />
+            </svg>
+            <AssistantIcon name="pin" />
+          </a>
+          <a className="campus-map-credit" href="https://www.openstreetmap.org/copyright" rel="noreferrer" target="_blank">
+            © OpenStreetMap
+          </a>
+        </div>
+      ) : (
+        <iframe loading="lazy" referrerPolicy="no-referrer" src={map.href} title={title} />
+      )}
+      <a className="map-route" href={route.href} target="_blank" rel="noreferrer">
+        Построить маршрут
+      </a>
     </section>
   )
 }
@@ -62,10 +84,9 @@ export function MessageBubble({ message, onFollowUp, isLoading }: MessageBubbleP
   const isAssistant = message.role === 'assistant'
 
   return (
-    <article className={isAssistant ? 'message-row assistant-row' : 'message-row user-row'}>
+    <article aria-label={isAssistant ? 'Помощник УУНиТ' : 'Вы'} className={isAssistant ? 'message-row assistant-row' : 'message-row user-row'}>
       {isAssistant && <AssistantMark />}
       <div className="message-content">
-        <div className="message-author">{isAssistant ? 'Помощник УУНиТ' : 'Вы'}</div>
         <div className="message-blocks">
           {message.blocks.length
             ? message.blocks.map((block, index) => <BlockView block={block} key={index} />)
