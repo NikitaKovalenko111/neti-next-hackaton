@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"university-agent/internal/models"
+	"university-agent/internal/transport/http/identity"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -16,16 +17,16 @@ type Subscriber interface {
 }
 
 type Handler struct {
-	Sessions Subscriber
-	Context  context.Context
+	Sessions    Subscriber
+	Context     context.Context
+	ResolveUser identity.Resolver
 }
 
 var upgrader = websocket.Upgrader{HandshakeTimeout: 5 * time.Second}
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	userID, err := uuid.Parse(r.URL.Query().Get("user_id"))
-	if err != nil || userID == uuid.Nil {
-		http.Error(w, "valid user_id is required", http.StatusBadRequest)
+	principal, ok := h.ResolveUser(w, r, r.URL.Query().Get("user_id"))
+	if !ok {
 		return
 	}
 
@@ -35,7 +36,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	events, unsubscribe := h.Sessions.Subscribe(userID)
+	events, unsubscribe := h.Sessions.Subscribe(principal.ID)
 	defer unsubscribe()
 
 	conn.SetReadLimit(1024)
@@ -70,7 +71,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case <-done:
 			return
 		case event, ok := <-events:
-			if !ok {
+			if !ok || (principal.Valid != nil && !principal.Valid(r.Context())) {
 				return
 			}
 			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
@@ -78,6 +79,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case <-ticker.C:
+			if principal.Valid != nil && !principal.Valid(r.Context()) {
+				return
+			}
 			_ = conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return

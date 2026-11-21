@@ -1,0 +1,42 @@
+import { parseMessage, type ChatMessage } from '../../api/messageBlocks'
+
+export const favoritesKey = 'uust-favorite-answers'
+
+export function canSaveFavorite(message: ChatMessage) {
+  return message.role === 'assistant' &&
+    (message.blocks.some((block) => block.type !== 'attachments') || Boolean(message.sources?.length))
+}
+
+export function snapshotFavorite(message: ChatMessage): ChatMessage {
+  return {
+    id: message.id,
+    role: 'assistant',
+    blocks: message.blocks.filter((block) => block.type !== 'attachments'),
+    sources: message.sources,
+  }
+}
+
+export function loadFavorites(): ChatMessage[] {
+  try {
+    const entries: unknown = JSON.parse(localStorage.getItem(favoritesKey) ?? '[]')
+    if (!Array.isArray(entries)) return []
+
+    return entries.flatMap((entry: unknown) => {
+      const message = parseMessage(entry, 'assistant')
+      if (!message || !canSaveFavorite(message)) return []
+
+      return [snapshotFavorite(message)]
+    })
+  } catch {
+    return []
+  }
+}
+
+export function writeFavorites(messages: ChatMessage[]) {
+  const entries = messages.map(({ id, blocks, sources }) => ({
+    message_id: id,
+    blocks,
+    sources,
+  }))
+  localStorage.setItem(favoritesKey, JSON.stringify(entries))
+}

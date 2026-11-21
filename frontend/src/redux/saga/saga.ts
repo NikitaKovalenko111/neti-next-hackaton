@@ -34,7 +34,7 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
   const question = state.messages.at(-1)?.blocks[0]
   if (state.sessionId !== action.payload || question?.type !== 'text') return
 
-  const userId = state.sessionId
+  const userId = state.account?.id ?? state.sessionId
   const controller = new AbortController()
   let request = state.chatId && state.pendingMessageId
     ? { chatId: state.chatId, messageId: state.pendingMessageId }
@@ -91,5 +91,10 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
 }
 
 export function* assistantSaga() {
-  yield takeLatest([requestAnswer.type, assistantActions.startNewSession.type], answerWorker)
+  yield takeLatest([
+    requestAnswer.type,
+    assistantActions.startNewSession.type,
+    assistantActions.accountChanged.type,
+    assistantActions.restoreChat.type,
+  ], answerWorker)
 }

@@ -20,10 +20,12 @@ import (
 	chatservice "university-agent/internal/services/chat"
 	requestservice "university-agent/internal/services/request"
 	"university-agent/internal/storage"
+	accountrepo "university-agent/internal/storage/repositories/account"
 	agentrepo "university-agent/internal/storage/repositories/agent"
 	chatrepo "university-agent/internal/storage/repositories/chat"
 	requestrepo "university-agent/internal/storage/repositories/request"
 	transport "university-agent/internal/transport/http"
+	accountapi "university-agent/internal/transport/http/handlers/account"
 	"university-agent/internal/transport/rabbitmq"
 )
 
@@ -83,7 +85,7 @@ func RunContext(parent context.Context, cfg config.Config) error {
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
-		Handler:           transport.New(runCtx, service, sessions, history),
+		Handler:           transport.New(runCtx, service, sessions, history, accountapi.New(accountrepo.New(db))),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

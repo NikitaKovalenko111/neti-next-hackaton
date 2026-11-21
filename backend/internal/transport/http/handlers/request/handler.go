@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	service "university-agent/internal/services/request"
+	"university-agent/internal/transport/http/identity"
 )
 
 const maxRequestSize = 32 << 20
@@ -17,7 +18,10 @@ type Creator interface {
 	Create(context.Context, service.Input) (service.Result, error)
 }
 
-type Handler struct{ Service Creator }
+type Handler struct {
+	Service     Creator
+	ResolveUser identity.Resolver
+}
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, maxRequestSize)
@@ -27,8 +31,12 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.MultipartForm.RemoveAll()
 
+	principal, ok := h.ResolveUser(w, r, r.FormValue("user_id"))
+	if !ok {
+		return
+	}
 	input := service.Input{
-		UserID:  r.FormValue("user_id"),
+		UserID:  principal.ID.String(),
 		ChatID:  r.FormValue("chat_id"),
 		Message: r.FormValue("message"),
 	}

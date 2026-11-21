@@ -30,6 +30,8 @@ MAX_TOOL_CALLS = 8
 HISTORY_BATCH_SIZE = 8
 PROGRAM_CODE = re.compile(r"\b[0-9]{2}\.[0-9]{2}\.[0-9]{2}\b")
 PASSING_SCORE_QUERY = re.compile(r"проходн\w*\s+балл\w*", re.IGNORECASE)
+MAP_QUERY = re.compile(r"\b(?:карт(?:а|е|у|ы|ой)|map)\b", re.IGNORECASE)
+ALL_PLACES_QUERY = re.compile(r"\b(?:вс[её](?:х|м)?|all)\b", re.IGNORECASE)
 SUMMARY_PROMPT = (
     "Обнови краткую аннотацию чата по полученной истории. Сохрани цель пользователя, "
     "важные детали, принятые решения и открытые вопросы. Учитывай исправления пользователя. "
@@ -122,6 +124,10 @@ class ToolCallingAgent:
             if remaining == 0:
                 break
 
+        requested_map = MAP_QUERY.search(user_prompt) is not None
+        fallback_points = list(allowed_points.values()) if requested_map else []
+        include_all_points = requested_map and ALL_PLACES_QUERY.search(user_prompt) is not None
+
         messages.append(
             {
                 "role": "user",
@@ -145,7 +151,8 @@ class ToolCallingAgent:
                     "фото и у этих снимков photo_available=true. Иначе верни пустой массив. "
                     "Если пользователь просит показать объекты на карте, в map_place_ids верни "
                     "ID нужных объектов из find_campus_details с purpose=map. В остальных "
-                    "случаях верни пустой массив. Не придумывай координаты."
+                    "случаях верни пустой массив. Если просили все объекты, верни все найденные "
+                    "ID нужного типа и филиала. Координаты и перечень меток в тексте не повторяй."
                 ),
             }
         )
@@ -167,9 +174,12 @@ class ToolCallingAgent:
             )
             if not final.get("tool_calls"):
                 try:
-                    return parse_user_answer(
+                    answer = parse_user_answer(
                         answer_text(final), allowed_sources, allowed_photos, allowed_points
                     )
+                    if fallback_points and (include_all_points or not answer.map_points):
+                        answer.map_points = fallback_points
+                    return answer
                 except ValueError:
                     logger.warning("OpenRouter returned an invalid final answer format")
             if attempt == 0:
@@ -180,10 +190,16 @@ class ToolCallingAgent:
 
         if draft is not None:
             try:
-                return answer_from_draft(draft, allowed_sources)
+                answer = answer_from_draft(draft, allowed_sources)
+                answer.map_points = fallback_points
+                return answer
             except ValueError:
                 logger.warning("OpenRouter did not return a usable text draft")
 
+        if fallback_points:
+            return UserAnswer(
+                message="Отметил на карте найденные места.", map_points=fallback_points
+            )
         return UserAnswer(
             message="Не удалось завершить подготовку ответа. Попробуйте отправить запрос ещё раз."
         )

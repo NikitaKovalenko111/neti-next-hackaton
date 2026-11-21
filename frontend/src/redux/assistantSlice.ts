@@ -4,9 +4,11 @@ import {
   type PayloadAction,
 } from '@reduxjs/toolkit'
 import type { AcceptedRequest } from '../api/api'
+import type { Account } from '../api/account'
 import type { ChatMessage } from '../api/messageBlocks'
 
 interface AssistantState {
+  account: Account | null
   sessionId: string
   chatId: string | null
   pendingMessageId: string | null
@@ -16,6 +18,7 @@ interface AssistantState {
 }
 
 const initialState: AssistantState = {
+  account: null,
   sessionId: crypto.randomUUID(),
   chatId: null,
   pendingMessageId: null,
@@ -30,6 +33,20 @@ const assistantSlice = createSlice({
   name: 'assistant',
   initialState,
   reducers: {
+    accountChanged(state, action: PayloadAction<{ account: Account | null; sessionId: string }>) {
+      if (state.account?.id === action.payload.account?.id) return
+      return { ...initialState, ...action.payload }
+    },
+    restoreChat(state, action: PayloadAction<{ accountId: string; sessionId: string; chatId: string; messages: ChatMessage[] }>) {
+      if (state.account?.id !== action.payload.accountId) return
+      state.sessionId = action.payload.sessionId
+      state.chatId = action.payload.chatId
+      state.messages = action.payload.messages
+      const last = state.messages.at(-1)
+      state.pendingMessageId = last?.role === 'user' ? last.id : null
+      state.status = 'idle'
+      state.error = null
+    },
     startNewSession(state, action: PayloadAction<string>) {
       state.sessionId = action.payload
       state.chatId = null

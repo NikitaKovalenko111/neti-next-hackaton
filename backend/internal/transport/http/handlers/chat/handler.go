@@ -9,6 +9,7 @@ import (
 
 	"university-agent/internal/models"
 	service "university-agent/internal/services/chat"
+	"university-agent/internal/transport/http/identity"
 )
 
 type Historian interface {
@@ -16,11 +17,17 @@ type Historian interface {
 }
 
 type Handler struct {
-	Service Historian
+	Service     Historian
+	ResolveUser identity.Resolver
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	messages, err := h.Service.History(r.Context(), r.PathValue("chat_id"), r.URL.Query().Get("user_id"), r.URL.Query().Get("after"))
+	w.Header().Set("Cache-Control", "no-store")
+	principal, ok := h.ResolveUser(w, r, r.URL.Query().Get("user_id"))
+	if !ok {
+		return
+	}
+	messages, err := h.Service.History(r.Context(), r.PathValue("chat_id"), principal.ID.String(), r.URL.Query().Get("after"))
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalid):

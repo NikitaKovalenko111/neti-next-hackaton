@@ -4,9 +4,13 @@ import { UniversityMark } from './UniversityMark'
 
 export const universityUrl = 'https://uust.ru/'
 
-export function ProjectHeader({ profileLabel, onNewChat }: {
+export function ProjectHeader({ profileLabel, signedIn, accountReady, onNewChat, onOpenFavorites, onOpenAccount }: {
   profileLabel: string
+  signedIn: boolean
+  accountReady: boolean
   onNewChat: () => void
+  onOpenFavorites: () => void
+  onOpenAccount: () => void
 }) {
   return (
     <header className="topbar">
@@ -25,7 +29,17 @@ export function ProjectHeader({ profileLabel, onNewChat }: {
           <AssistantIcon name="plus" />
           Новый диалог
         </button>
-        <div className="profile-status" role="status">{profileLabel}</div>
+        <div className="topbar-status">
+          <div className="profile-status" role="status">{profileLabel}</div>
+          <button aria-haspopup="dialog" className="favorites-button" onClick={onOpenFavorites} type="button">
+            <AssistantIcon name="star" />
+            Избранное
+          </button>
+          <button aria-haspopup="dialog" className="favorites-button account-button" disabled={!accountReady} onClick={onOpenAccount} type="button">
+            <AssistantIcon name="user" />
+            {signedIn ? 'Аккаунт' : 'Войти'}
+          </button>
+        </div>
         <ThemeToggle />
       </div>
     </header>

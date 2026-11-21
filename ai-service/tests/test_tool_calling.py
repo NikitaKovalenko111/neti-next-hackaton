@@ -2,6 +2,7 @@ import json
 from unittest.mock import AsyncMock, call
 
 import httpx
+import pytest
 
 from app.clients.openrouter import OpenRouterClient
 from app.models import ConversationContext, ConversationTurn
@@ -374,6 +375,42 @@ async def test_agent_serializes_map_points_from_the_lookup(settings, request_mes
 
     assert result.model_dump(mode="json", exclude_none=True)["blocks"][1:] == [
         {"type": "map", "points": [main_building]}
+    ]
+
+
+@pytest.mark.parametrize(
+    "final_content",
+    [json.dumps({"message": "Вот общежития.", "map_place_ids": ["dorm1"]}), "{invalid"],
+)
+async def test_map_of_all_dorms_keeps_every_lookup_point(request_message, final_content):
+    request_message.message = "Дай карту всех общежитий УУНиТ в Уфе"
+    points = [
+        {"title": "Общежитие №1", "latitude": 54.736269, "longitude": 55.971939},
+        {"title": "Общежитие №2", "latitude": 54.736166, "longitude": 55.972741},
+    ]
+    lookup = tool_call("find_campus_details", purpose="map", kind="dormitory", branch_id="ufa")
+    model = AsyncMock()
+    model.chat.side_effect = [
+        {"tool_calls": [lookup]},
+        {"content": "На карте отмечены общежития Уфы."},
+        {"content": final_content},
+        {"content": final_content},
+    ]
+    execute = AsyncMock(
+        return_value={
+            "status": "ok",
+            "data": [
+                {"id": f"dorm{index}", "title": point["title"], "data": point}
+                for index, point in enumerate(points, 1)
+            ],
+        }
+    )
+
+    service = AgentService(ToolCallingAgent(model, execute))
+    result = await service.process(request_message)
+
+    assert result.model_dump(mode="json", exclude_none=True)["blocks"][1:] == [
+        {"type": "map", "points": points}
     ]
 
 

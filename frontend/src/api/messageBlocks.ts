@@ -13,12 +13,16 @@ interface ChatAttachment {
   url: string
 }
 
-export interface MapBlock {
-  type: 'map'
-  lat: number
-  lon: number
+export interface MapPoint {
+  latitude: number
+  longitude: number
   title?: string
   address?: string
+}
+
+export interface MapBlock {
+  type: 'map'
+  points: MapPoint[]
 }
 
 export type MessageBlock =
@@ -47,14 +51,17 @@ function isSource(value: unknown): value is ChatSource {
     (value.section === undefined || typeof value.section === 'string')
 }
 
-function parseMapPoint(value: Record<string, unknown>, lat: unknown, lon: unknown): MapBlock | undefined {
-  if (typeof lat !== 'number' || typeof lon !== 'number' ||
-    !Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lon) || Math.abs(lon) > 180) return
+function parseMapPoint(value: unknown): MapPoint | undefined {
+  if (!isRecord(value)) return
+  const latitude = value.latitude ?? value.lat
+  const longitude = value.longitude ?? value.lon
+  if (typeof latitude !== 'number' || typeof longitude !== 'number' ||
+    !Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
+    !Number.isFinite(longitude) || Math.abs(longitude) > 180) return
 
   return {
-    type: 'map',
-    lat,
-    lon,
+    latitude,
+    longitude,
     title: typeof value.title === 'string' ? value.title : undefined,
     address: typeof value.address === 'string' ? value.address : undefined,
   }
@@ -83,7 +90,12 @@ function parseBlock(value: unknown): MessageBlock | undefined {
     })
     if (attachments.length) return { type: 'attachments', attachments }
   }
-  if (value.type === 'map') return parseMapPoint(value, value.lat, value.lon)
+  if (value.type === 'map') {
+    const points = (Array.isArray(value.points) ? value.points : [value])
+      .map(parseMapPoint)
+      .filter((point) => point !== undefined)
+    if (points.length) return { type: 'map', points }
+  }
 }
 
 export function parseMessage(value: unknown, role: ChatMessage['role']): ChatMessage | undefined {
@@ -103,15 +115,24 @@ export function parseMessage(value: unknown, role: ChatMessage['role']): ChatMes
     }
   }
 
-  const blocks = value.blocks.flatMap((block: unknown) => {
-    if (isRecord(block) && block.type === 'map' && Array.isArray(block.points)) {
-      return block.points
-        .map((point: unknown) => isRecord(point) ? parseMapPoint(point, point.latitude, point.longitude) : undefined)
-        .filter((point) => point !== undefined)
-    }
+  const blocks: MessageBlock[] = []
+  const map: MapBlock = { type: 'map', points: [] }
+  const mapPointKeys = new Set<string>()
+  for (const block of value.blocks) {
     const parsed = parseBlock(block)
-    return parsed ? [parsed] : []
-  })
+    if (!parsed) continue
+    if (parsed.type !== 'map') {
+      blocks.push(parsed)
+      continue
+    }
+    if (!map.points.length) blocks.push(map)
+    for (const point of parsed.points) {
+      const key = JSON.stringify([point.latitude, point.longitude, point.title, point.address])
+      if (mapPointKeys.has(key)) continue
+      mapPointKeys.add(key)
+      map.points.push(point)
+    }
+  }
 
   return {
     id: value.message_id,
