@@ -3,6 +3,7 @@ import hashlib
 import io
 import logging
 import re
+from importlib.resources import files
 from urllib.parse import urlsplit
 
 import httpx
@@ -75,12 +76,14 @@ async def import_photos(settings: Settings) -> int:
             photo_id, url = row["id"], row["url"]
             if not re.fullmatch(r"[a-z0-9-]+", photo_id):
                 raise ValueError(f"Invalid photo ID: {photo_id}")
-            version = hashlib.sha256(url.encode()).hexdigest()[:16]
+            bundled = files("app.migrations").joinpath("campus_photos", f"{photo_id}.jpg")
+            embedded_image = bundled.read_bytes() if bundled.is_file() else None
+            version = hashlib.sha256(embedded_image or url.encode()).hexdigest()[:16]
             key = f"{PHOTO_PREFIX}{photo_id}-{version}.jpg"
 
             if not await stored_photo(storage, bucket, key):
                 try:
-                    image = await download_photo(client, url)
+                    image = embedded_image or await download_photo(client, url)
                 except (httpx.HTTPError, ValueError) as error:
                     logger.warning("Photo %s unavailable: %s", photo_id, error)
                     await connection.execute(

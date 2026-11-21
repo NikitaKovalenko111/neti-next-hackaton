@@ -2,6 +2,7 @@ import json
 from unittest.mock import AsyncMock, call
 
 import httpx
+import pytest
 
 from app.clients.openrouter import OpenRouterClient
 from app.models import ConversationContext, ConversationTurn
@@ -47,7 +48,7 @@ async def test_agent_returns_answer_after_two_tool_rounds(settings, request_mess
         payload = json.loads(request.content)
         calls.append(payload)
         assert request.url.path == "/api/v1/chat/completions"
-        assert len(payload["tools"]) == 23
+        assert len(payload["tools"]) == 29
         if len(calls) == 1:
             return reply(
                 content="",
@@ -126,7 +127,7 @@ async def test_tool_budget_limits_calls_in_one_model_response(settings):
         if len(rounds) == 1:
             return reply(tool_calls=[tool_call("get_data_scope")] * (MAX_TOOL_CALLS + 1))
         assert payload["tool_choice"] == "none"
-        assert len(payload["tools"]) == 23
+        assert len(payload["tools"]) == 29
         assistant = payload["messages"][2]
         assert len(assistant["tool_calls"]) == MAX_TOOL_CALLS
         tool_results = payload["messages"][3:-1]
@@ -298,8 +299,25 @@ async def test_conversation_context_and_annotation_cross_queue_boundary(settings
     assert "history_summary" not in payload["blocks"][0]
 
 
-async def test_agent_serializes_map_points_from_the_lookup(settings, request_message):
-    request_message.message = "Покажи главный корпус УУНиТ на карте"
+@pytest.mark.parametrize(
+    ("prompt", "tool_name", "arguments"),
+    [
+        (
+            "Где находится главный корпус УУНиТ в Уфе?",
+            "find_campus_details",
+            {"purpose": "map", "query": "главный корпус"},
+        ),
+        (
+            "Какой адрес у здравпункта УУНиТ в Уфе?",
+            "find_campus_services",
+            {"include_map": True, "topic": "health"},
+        ),
+    ],
+)
+async def test_agent_serializes_map_points_from_the_lookup(
+    settings, request_message, prompt, tool_name, arguments
+):
+    request_message.message = prompt
     main_building = {"title": "Главный корпус", "latitude": 54.720714, "longitude": 55.933422}
     execute = AsyncMock(
         return_value={
@@ -314,9 +332,11 @@ async def test_agent_serializes_map_points_from_the_lookup(settings, request_mes
 
     def respond(request):
         payload = json.loads(request.content)
+        assert "Всегда добавляй точки на карту" in payload["messages"][0]["content"]
         if payload.get("tool_choice") == "none":
             schema = payload["response_format"]["json_schema"]["schema"]
             assert "map_place_ids" in schema["required"]
+            assert "даже если пользователь явно её не просил" in payload["messages"][-1]["content"]
             return reply(
                 content=json.dumps(
                     {
@@ -330,9 +350,7 @@ async def test_agent_serializes_map_points_from_the_lookup(settings, request_mes
             )
         if payload["messages"][-1]["role"] == "tool":
             return reply(content="Вот главный корпус УУНиТ.")
-        return reply(
-            tool_calls=[tool_call("find_campus_details", purpose="map", query="главный корпус")]
-        )
+        return reply(tool_calls=[tool_call(tool_name, **arguments)])
 
     async with httpx.AsyncClient(
         base_url=str(settings.openrouter_base_url), transport=httpx.MockTransport(respond)

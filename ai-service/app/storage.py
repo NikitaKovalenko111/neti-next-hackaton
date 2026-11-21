@@ -14,6 +14,7 @@ MIGRATIONS = (
     ("005_campus_photo_objects", None),
     ("006_university_knowledge", None),
     ("007_university_knowledge_seed", "university_knowledge.json"),
+    ("008_university_full_seed", "university_knowledge_full.json"),
 )
 
 

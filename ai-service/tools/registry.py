@@ -8,7 +8,7 @@ import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app import university_knowledge
-from tools import campus, education, support
+from tools import campus, education, student, support
 
 logger = logging.getLogger(__name__)
 
@@ -92,6 +92,91 @@ class KnowledgeNotes(Arguments):
 ProgramCode = Annotated[str, Field(pattern=r"^[0-9]{2}\.[0-9]{2}\.[0-9]{2}$")]
 StudyForm = Literal["очная", "очно-заочная", "заочная"]
 AcademicYear = Annotated[int, Field(ge=2000, le=2100)]
+
+
+EducationLevel = Literal[
+    "Бакалавриат и специалитет",
+    "Магистратура",
+    "Среднее профессиональное образование",
+    "Аспирантура",
+]
+Campaign = Literal["main", "additional"]
+
+
+AdmissionCode = Annotated[str, Field(pattern=r"^[0-9]{1,2}\.[0-9]{1,2}\.[0-9]{1,2}$")]
+
+
+class AdmissionSeats(OptionalBranch):
+    query: Query | None = None
+    reference_code: AdmissionCode | None = None
+    level: EducationLevel | None = None
+    form: StudyForm | None = None
+    year: AcademicYear | None = None
+    campaign: Campaign | None = None
+    seat_type: (
+        Literal[
+            "budget_general",
+            "budget_total",
+            "budget_federal",
+            "budget_regional",
+            "quota_special",
+            "quota_separate",
+            "quota_target",
+            "contract",
+            "remaining_total",
+        ]
+        | None
+    ) = None
+
+
+class TransferVacancies(OptionalBranch):
+    query: Query | None = None
+    reference_code: ProgramCode | None = None
+    form: StudyForm | None = None
+    course: int | None = Field(None, ge=1, le=8)
+    funding: Literal["budget", "contract"] | None = None
+    has_places: bool = Field(False, description="Исключить строки без положительного числа мест")
+
+
+class AdmissionCalendar(Arguments):
+    query: Query | None = Field(None, description="Ключевые слова события, например согласие")
+    level: EducationLevel | None = None
+    form: StudyForm | None = None
+    funding: Literal["budget", "contract"] | None = None
+    campaign: Campaign | None = None
+    year: AcademicYear | None = None
+
+
+class HousingMoveIn(OptionalBranch):
+    year: AcademicYear | None = None
+    kind: Literal["procedure", "sessions"] = "procedure"
+    query: Query | None = Field(None, description="Курс, подразделение или ключевые слова")
+    date: Annotated[str, Field(pattern=r"^\d{4}-\d{2}-\d{2}$")] | None = None
+
+
+class StudentResources(OptionalBranch):
+    catalog: Literal[
+        "all",
+        "student_life",
+        "student_clubs",
+        "academic_mobility",
+        "program_projects",
+        "vuc_admission",
+        "university_history",
+        "research_events",
+    ] = "all"
+    query: Query | None = None
+    topic: Identifier | None = Field(
+        None, description="Тип карточки, например digital, family, career, sport, volunteering"
+    )
+    year: AcademicYear | None = None
+    reference_code: ProgramCode | None = None
+
+
+class CampusServices(OptionalBranch):
+    query: Query | None = None
+    topic: Literal["health", "library", "pass", "accessibility", "student-office"] | None = None
+    include_map: bool = False
 
 
 class AdmissionOptions(OptionalBranch):
@@ -216,6 +301,44 @@ class Tool:
 
 
 TOOLS = {
+    "find_admission_seats": Tool(
+        "План приёма: бюджетные и платные места, особая, отдельная и целевая квоты. "
+        "Уточняй год, кампанию, уровень, филиал, код, профиль и форму. Пустые числа не равны нулю.",
+        AdmissionSeats,
+        student.find_admission_seats,
+    ),
+    "find_transfer_vacancies": Tool(
+        "Опубликованные вакансии для перевода, восстановления или перехода на бюджет. "
+        "Ищи по направлению, курсу, форме и филиалу. has_places=true для положительных "
+        "чисел. Указывай дату сведений, если известна, и предлагай подтвердить наличие.",
+        TransferVacancies,
+        student.find_transfer_vacancies,
+    ),
+    "find_admission_calendar": Tool(
+        "Подробные даты подачи, экзаменов, согласий и зачисления по уровням, формам, "
+        "бюджету, договору, основной и дополнительной кампаниям.",
+        AdmissionCalendar,
+        student.find_admission_calendar,
+    ),
+    "find_housing_move_in": Tool(
+        "Заселение в общежитие. procedure: документы, этапы, заявления, оплата и правила "
+        "для иностранцев. sessions: опубликованные дата, время и адрес комиссии.",
+        HousingMoveIn,
+        student.find_housing_move_in,
+    ),
+    "find_student_resources": Tool(
+        "Студенческие процедуры и сервисы: отпуска, пересдача, перевод, учебные справки, "
+        "оплата, личный кабинет, почта, карьера, клубы, ВУЦ, обмен, ТОП-ИТ, история и "
+        "научные конференции. Полная карточка через get_university_record.",
+        StudentResources,
+        student.find_student_resources,
+    ),
+    "find_campus_services": Tool(
+        "Адрес, помещение, время, телефон здравпунктов, библиотек, бюро пропусков, "
+        "студенческих офисов и служб доступности. Для маркеров укажи include_map=true.",
+        CampusServices,
+        student.find_campus_services,
+    ),
     "get_admission_options": Tool(
         "Сравнить программы, стоимость за год, прошлые проходные баллы и вступительные "
         "испытания. При точном вопросе укажи metric, коды направлений и известные фильтры.",
@@ -274,7 +397,7 @@ TOOLS = {
         university_knowledge.search_records,
     ),
     "get_university_record": Tool(
-        "Получить полную карточку и источники по идентификатору из search_university_records.",
+        "Получить полную карточку и источники по ID из поиска по университетской базе.",
         KnowledgeRecord,
         university_knowledge.get_record,
     ),

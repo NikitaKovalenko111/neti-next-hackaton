@@ -140,9 +140,12 @@ class ToolCallingAgent:
                     "на которые опирается ответ. При отсутствии источников верни пустой массив. "
                     "В photo_ids верни ID снимков из list_photos, если пользователь запросил "
                     "фото и у этих снимков photo_available=true. Иначе верни пустой массив. "
-                    "Если пользователь просит показать объекты на карте, в map_place_ids верни "
-                    "ID нужных объектов из find_campus_details с purpose=map. В остальных "
-                    "случаях верни пустой массив. Не придумывай координаты."
+                    "При вопросе о местоположении, адресе или о том, как добраться до объекта, "
+                    "добавь карту, даже если пользователь явно её не просил. "
+                    "Для этого обязательно заполни map_place_ids ID подходящих объектов "
+                    "из find_campus_details с purpose=map или find_campus_services "
+                    "с include_map=true. Если подходящих точек нет или вопрос не о месте, "
+                    "верни пустой массив. Координаты в тексте не заменяют карту."
                 ),
             }
         )
@@ -245,9 +248,11 @@ class ToolCallingAgent:
         allowed_sources.update(collect_source_urls(result))
         if name == "list_photos":
             allowed_photos.update(collect_campus_photos(result))
-        if name == "find_campus_details" and isinstance(arguments, dict):
-            if arguments.get("purpose") == "map":
-                allowed_points.update(collect_map_points(result))
+        if isinstance(arguments, dict) and (
+            (name == "find_campus_details" and arguments.get("purpose") == "map")
+            or (name == "find_campus_services" and arguments.get("include_map") is True)
+        ):
+            allowed_points.update(collect_map_points(result))
         return {
             "role": "tool",
             "tool_call_id": call_id,
