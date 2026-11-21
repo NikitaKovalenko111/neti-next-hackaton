@@ -3,14 +3,14 @@
 ## Общий запуск
 
 Из корня репозитория скопируйте `.env.example` в `.env`, если файла ещё нет.
-Укажите в `.env` значение `OPENROUTER_API_KEY` и запустите контейнеры. [Ключи OpenRouter](https://openrouter.ai/settings/keys)
+Укажите в `.env` значения `OPENROUTER_API_KEY` и `JWT_SECRET`, затем запустите контейнеры. Для генерации секрета используйте `openssl rand -hex 32`. [Ключи OpenRouter](https://openrouter.ai/settings/keys)
 
 ```sh
 docker compose up --build -d
 docker compose logs -f rag-index campus-photos ai-service backend
 ```
 
-Compose запускает локально backend, AI-сервис, PostgreSQL, RabbitMQ и MinIO.
+Compose запускает фронтенд через Nginx, Go-бэкенд, AI-сервис, PostgreSQL, RabbitMQ и MinIO.
 После подготовки PostgreSQL задача `rag-index` индексирует справочники через OpenRouter
 и сохраняет векторы в pgvector. Задача `campus-photos` загружает фотографии
 справочника в MinIO. AI-сервис ждёт завершения обеих задач
@@ -22,6 +22,7 @@ MinIO собирается из закреплённого исходного р
 
 | Сервис | Адрес по умолчанию |
 | --- | --- |
+| Фронтенд (Nginx) | http://localhost:5138/ |
 | Backend | http://localhost:8080/health |
 | WebSocket | ws://localhost:8080/ws?user_id=UUID |
 | AI service | http://localhost:8000/health |
@@ -67,7 +68,7 @@ PGHOST=localhost PGPORT=5433 PGUSER=postgres PGPASSWORD=postgres \
 
 Тест создаёт отдельную временную базу и роли, проверяет перенос истории, повторную настройку и запрет доступа между схемами, затем удаляет свои данные.
 
-Backend обращается к MinIO внутри сети по `minio:9000`, а ссылки для браузера подписывает с адресом `MINIO_PUBLIC_ENDPOINT`. По умолчанию это `http://localhost:${MINIO_PORT}`. Для доступа с другого компьютера укажите публичный URL и настройте публикацию соответствующих портов. `MINIO_REGION` применяется и к серверу MinIO, и к клиенту backend.
+Backend обращается к MinIO внутри сети по `minio:9000`, а ссылки для браузера подписывает с адресом `MINIO_PUBLIC_ENDPOINT`. В общем Compose по умолчанию это адрес фронтенда `http://localhost:${FRONTEND_PORT}`. Nginx передаёт подписанные GET-запросы к бакету в MinIO. Для доступа с другого компьютера укажите публичный адрес фронтенда в `MINIO_PUBLIC_ENDPOINT` и настройте адрес привязки через `FRONTEND_BIND_ADDRESS` или внешний прокси. Для HTTPS за прокси укажите публичный URL с `https://` и установите `JWT_SECURE_COOKIE=true`. `MINIO_REGION` применяется и к серверу MinIO, и к клиенту backend.
 
 Имена пользователей и пароли PostgreSQL/RabbitMQ используются в URL подключения. Если в них есть зарезервированные символы URL, настройте URL подключения в Compose с корректным кодированием.
 
