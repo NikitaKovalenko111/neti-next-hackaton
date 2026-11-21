@@ -1,20 +1,19 @@
 # University AI agent
 
-Для раздельного запуска Go на VPS и AI-воркера в Colab используйте [ноутбук и инструкцию](deploy/colab/README.md).
-
 ## Общий запуск
 
-Из корня репозитория:
+Из корня репозитория скопируйте `.env.example` в `.env`, если файла ещё нет.
+Укажите в `.env` значение `OPENROUTER_API_KEY` и запустите контейнеры. [Ключи OpenRouter](https://openrouter.ai/settings/keys)
 
 ```sh
-cp .env.example .env
 docker compose up --build -d
-docker compose logs -f ollama-init rag-index ai-service backend
+docker compose logs -f rag-index ai-service backend
 ```
 
-Общий `docker-compose.yml` поднимает backend, ai-service, PostgreSQL, RabbitMQ, MinIO и Ollama в одной сети. AI-сервис запускается после загрузки моделей Ollama и завершения `rag-index`. Агент обращается к справочникам через инструменты PostgreSQL и pgvector. `postgres-init` готовит схемы и роли базы данных. Backend ждёт его завершения, готовности RabbitMQ и MinIO и автоматически применяет миграции. До готовности модели запросы могут накапливаться в очереди.
-
-Первый запуск требует сборки образов и загрузки модели. По умолчанию Ollama использует CPU. Frontend пока отсутствует в репозитории и в общий Compose не включён.
+Compose запускает локально backend, AI-сервис, PostgreSQL, RabbitMQ и MinIO.
+После подготовки PostgreSQL задача `rag-index` индексирует справочники через OpenRouter
+и сохраняет векторы в pgvector. AI-сервис запускается после завершения индексации
+и отправляет в OpenRouter запросы на генерацию и поиск по смыслу.
 
 MinIO собирается из закреплённого исходного релиза `RELEASE.2025-09-07T16-13-09Z` через [deploy/minio/Dockerfile](deploy/minio/Dockerfile), поскольку [официальная community-версия распространяется как исходники](https://github.com/minio/minio#source-only-distribution). Dockerfile AI-сервиса находится в [ai-service/Dockerfile](ai-service/Dockerfile).
 
@@ -30,7 +29,6 @@ MinIO собирается из закреплённого исходного р
 | RabbitMQ UI | http://localhost:15672 |
 | MinIO API | http://localhost:9000 |
 | MinIO Console | http://localhost:9001 |
-| Ollama | http://localhost:11434 |
 
 Все порты публикуются на `127.0.0.1`. PostgreSQL снаружи использует порт `5433`, чтобы не конфликтовать с локальной БД; внутри сети контейнеров — `5432`.
 

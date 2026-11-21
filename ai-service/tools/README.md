@@ -1,6 +1,6 @@
 # Инструменты поиска по данным УУНиТ
 
-Модели передаётся результат `tool_definitions()` в поле `tools` запроса Ollama API. Приложение выполняет выбранную функцию через `await call_tool(connection, name, arguments, ...)` и возвращает результат модели. Для запросов pgvector передайте HTTP-клиент Ollama и имя модели, использованной при индексации. Точные запросы работают через PostgreSQL. [Формат вызова инструментов Ollama](https://docs.ollama.com/capabilities/tool-calling)
+Модели передаётся результат `tool_definitions()` в поле `tools` запроса OpenRouter API. Приложение выполняет выбранную функцию через `await call_tool(connection, name, arguments, ...)` и возвращает результат модели. Для запросов pgvector передайте HTTP-клиент OpenRouter и имя модели, использованной при индексации. Точные запросы работают через PostgreSQL. [Формат вызова инструментов OpenRouter](https://openrouter.ai/docs/guides/features/tool-calling)
 
 | Вопрос пользователя | Инструменты |
 | --- | --- |
@@ -29,7 +29,7 @@ python -m tools call search_places '{"branch_id":"ufa","kind":"building","number
 python -m tools call search_support_grounds '{"query":"нужны деньги на лекарства"}'
 ```
 
-CLI использует настройки `RAG_POSTGRES_*` и `OLLAMA_*`. В Compose после импорта данных те же команды запускаются с настройками `rag-index`:
+CLI использует настройки `RAG_POSTGRES_*` и `OPENROUTER_*`. В Compose после импорта данных те же команды запускаются с настройками `rag-index`:
 
 ```sh
 docker compose run --rm --no-deps rag-index python -m tools call \

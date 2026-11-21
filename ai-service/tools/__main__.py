@@ -2,8 +2,7 @@ import argparse
 import asyncio
 import json
 
-import httpx
-
+from app.clients.openrouter import openrouter_http
 from app.config import Settings
 from app.storage import connect_rag
 from tools import call_tool, tool_definitions
@@ -13,16 +12,14 @@ async def run_tool(name: str, arguments: dict) -> dict:
     settings = Settings()
     async with (
         connect_rag(settings) as connection,
-        httpx.AsyncClient(
-            base_url=str(settings.ollama_base_url), timeout=settings.ollama_timeout_seconds
-        ) as client,
+        openrouter_http(settings, require_key=False) as client,
     ):
         return await call_tool(
             connection,
             name,
             arguments,
             embedding_client=client,
-            embedding_model=settings.ollama_embedding_model,
+            embedding_model=settings.openrouter_embedding_model,
         )
 
 

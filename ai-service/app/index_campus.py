@@ -6,6 +6,7 @@ import logging
 import asyncpg
 import httpx
 
+from app.clients.openrouter import openrouter_http
 from app.config import Settings
 from app.embeddings import BATCH_SIZE, embed
 from app.material_support import find_ground, index_material_support, search_material_support
@@ -90,10 +91,8 @@ async def main(args: argparse.Namespace) -> None:
             print(json.dumps(result, ensure_ascii=False, indent=2))
             return
 
-        async with httpx.AsyncClient(
-            base_url=str(settings.ollama_base_url), timeout=settings.ollama_timeout_seconds
-        ) as client:
-            model = settings.ollama_embedding_model
+        async with openrouter_http(settings) as client:
+            model = settings.openrouter_embedding_model
             if args.query is not None:
                 matches = await search_campus(
                     connection, client, model, args.query, args.branch, args.kind

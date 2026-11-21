@@ -7,7 +7,7 @@ import aio_pika
 import httpx
 import pytest
 
-from app.clients.ollama import OllamaClient
+from app.clients.openrouter import OpenRouterClient
 from app.config import Settings
 from app.models import AgentResponse
 from app.services.agent import AgentService
@@ -31,12 +31,12 @@ async def test_real_rabbitmq_request_response_roundtrip(request_message):
 
     def respond(request):
         generations.append(json.loads(request.content))
-        return httpx.Response(200, json={"message": {"content": "Test answer"}, "done": True})
+        return httpx.Response(200, json={"choices": [{"message": {"content": "Test answer"}}]})
 
     async with httpx.AsyncClient(
-        base_url=str(settings.ollama_base_url), transport=httpx.MockTransport(respond)
+        base_url=str(settings.openrouter_base_url), transport=httpx.MockTransport(respond)
     ) as client:
-        service = AgentService(OllamaClient(client, settings))
+        service = AgentService(OpenRouterClient(client, settings))
         worker = RabbitWorker(settings, service)
         connection = await aio_pika.connect_robust(broker_url, timeout=5)
 

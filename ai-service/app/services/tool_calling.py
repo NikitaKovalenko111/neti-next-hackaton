@@ -5,7 +5,7 @@ from collections.abc import Awaitable, Callable
 import asyncpg
 import httpx
 
-from app.clients.ollama import OllamaClient, answer_text
+from app.clients.openrouter import OpenRouterClient, answer_text
 from app.config import Settings
 from app.storage import connect_rag
 from tools import call_tool, tool_definitions
@@ -28,7 +28,7 @@ class DatabaseTools:
                     name,
                     arguments,
                     embedding_client=self.client,
-                    embedding_model=self.settings.ollama_embedding_model,
+                    embedding_model=self.settings.openrouter_embedding_model,
                 )
         except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError, TimeoutError):
             logger.warning("PostgreSQL unavailable for tool %s", name, exc_info=True)
@@ -37,7 +37,7 @@ class DatabaseTools:
 
 class ToolCallingAgent:
     def __init__(
-        self, model: OllamaClient, execute_tool: Callable[[str, dict], Awaitable[dict]]
+        self, model: OpenRouterClient, execute_tool: Callable[[str, dict], Awaitable[dict]]
     ) -> None:
         self.model = model
         self.execute_tool = execute_tool
@@ -56,7 +56,7 @@ class ToolCallingAgent:
             if not calls:
                 return answer_text(message)
             if not isinstance(calls, list):
-                raise ValueError("Ollama returned invalid tool calls")
+                raise ValueError("OpenRouter returned invalid tool calls")
 
             assistant = {**message, "role": "assistant", "tool_calls": calls[:remaining]}
             messages.append(assistant)
@@ -74,7 +74,7 @@ class ToolCallingAgent:
                 "Если их мало, объясни, чего не хватает."
             ),
         }
-        final = await self.model.chat(messages)
+        final = await self.model.chat(messages, self.tools, tool_choice="none")
         content = final.get("content")
         if final.get("tool_calls") or not isinstance(content, str) or not content.strip():
             return "Поиск по базе не удалось завершить. Уточните вопрос и попробуйте ещё раз."
@@ -84,18 +84,26 @@ class ToolCallingAgent:
         function = call.get("function") if isinstance(call, dict) else None
         name = function.get("name") if isinstance(function, dict) else None
         if not isinstance(name, str) or not name:
-            raise ValueError("Ollama returned a tool call without a name")
+            raise ValueError("OpenRouter returned a tool call without a name")
 
-        arguments = function.get("arguments", {})
+        call_id = call.get("id")
+        if not isinstance(call_id, str) or not call_id:
+            raise ValueError("OpenRouter returned a tool call without an ID")
+
+        raw_arguments = function.get("arguments")
+        try:
+            arguments = json.loads(raw_arguments) if isinstance(raw_arguments, str) else None
+        except json.JSONDecodeError:
+            arguments = None
+
         if isinstance(arguments, dict):
             result = await self.execute_tool(name, arguments)
         else:
-            # Native Ollama tool calls use a JSON object for arguments.
-            function["arguments"] = {}
+            function["arguments"] = "{}"
             result = {"status": "invalid_arguments", "errors": [{"field": "", "type": "dict_type"}]}
 
         return {
             "role": "tool",
-            "tool_name": name,
+            "tool_call_id": call_id,
             "content": json.dumps(result, ensure_ascii=False),
         }

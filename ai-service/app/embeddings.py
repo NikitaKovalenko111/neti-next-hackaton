@@ -9,13 +9,22 @@ BATCH_SIZE = 16
 
 async def embed(client: httpx.AsyncClient, model: str, texts: list[str]) -> list[str]:
     response = await client.post(
-        "/api/embed",
-        json={"model": model, "input": texts, "dimensions": DIMENSIONS, "truncate": False},
+        "embeddings",
+        json={"model": model, "input": texts, "dimensions": DIMENSIONS, "encoding_format": "float"},
     )
     response.raise_for_status()
-    vectors = response.json().get("embeddings")
-    if not isinstance(vectors, list) or len(vectors) != len(texts):
-        raise ValueError("Ollama returned an unexpected number of embeddings")
+    payload = response.json()
+    items = payload.get("data") if isinstance(payload, dict) else None
+    if not isinstance(items, list) or len(items) != len(texts):
+        raise ValueError("OpenRouter returned an unexpected number of embeddings")
+
+    by_index = {}
+    for item in items:
+        index = item.get("index") if isinstance(item, dict) else None
+        if type(index) is not int or not 0 <= index < len(texts) or index in by_index:
+            raise ValueError("OpenRouter returned an invalid embedding index")
+        by_index[index] = item.get("embedding")
+    vectors = [by_index[index] for index in range(len(texts))]
 
     for vector in vectors:
         if (
@@ -24,6 +33,6 @@ async def embed(client: httpx.AsyncClient, model: str, texts: list[str]) -> list
             or any(type(value) not in (int, float) or not math.isfinite(value) for value in vector)
             or not any(vector)
         ):
-            raise ValueError("Ollama returned an invalid embedding")
+            raise ValueError("OpenRouter returned an invalid embedding")
 
     return [json.dumps(vector) for vector in vectors]
