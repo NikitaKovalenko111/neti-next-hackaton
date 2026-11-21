@@ -286,12 +286,19 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		t.Fatalf("unexpected last followup context: %+v", snapshot)
 	}
 
-	reply.Blocks = []models.Block{{Text: &models.TextBlock{Message: "Followup answer"}}}
+	campusKey := "campus/ishimbay-photo.jpg"
+	reply.Blocks = []models.Block{
+		{Text: &models.TextBlock{Message: "Followup answer"}},
+		{Attachments: &models.AttachmentsBlock{Attachments: []models.AgentAttachment{
+			{ID: uuid.New(), Bucket: "images", ObjectKey: campusKey, Filename: "ishimbay.jpg", ContentType: "image/jpeg"},
+		}}},
+	}
 	reply.RequestMessageID = followups[6]
 	reply.HistorySummary = "Newer summary"
 	if err := agent.HandleResponse(ctx, reply); err != nil {
 		t.Fatal(err)
 	}
+	reply.Blocks[1].Attachments.Attachments[0].ID = uuid.New()
 	reply.RequestMessageID = followups[5]
 	reply.HistorySummary = "Stale summary"
 	if err := agent.HandleResponse(ctx, reply); err != nil {
@@ -302,4 +309,27 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	if err := db.QueryRow(ctx, `SELECT history_summary FROM chats WHERE id = $1`, accepted.ChatID).Scan(&summary); err != nil || summary != "Newer summary" {
 		t.Fatalf("unexpected saved annotation: %q (%v)", summary, err)
 	}
+
+	for i := 0; i < 2; i++ {
+		var event models.ResponseEvent
+		if err := ws.ReadJSON(&event); err != nil {
+			t.Fatal(err)
+		}
+		photo := event.Blocks[1].Attachments.Attachments[0]
+		if photo.ObjectKey != campusKey || !strings.Contains(photo.URL, "?signature=") {
+			t.Fatalf("campus photo URL not signed: %+v", photo)
+		}
+	}
+
+	messages, err = history.History(ctx, accepted.ChatID.String(), userID, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range messages[len(messages)-2:] {
+		photo := entry.Blocks[1].Attachments.Attachments[0]
+		if photo.ObjectKey != campusKey || photo.URL == "" {
+			t.Fatalf("shared campus photo missing in history: %+v", photo)
+		}
+	}
+
 }

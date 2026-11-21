@@ -56,13 +56,20 @@ class AnswerText(BaseModel):
 
 class UserAnswer(AnswerText):
     history_summary: str = ""
+    photo_ids: list[str] = Field(default_factory=list)
+    photos: list[Attachment] = Field(default_factory=list)
 
 
 class TextBlock(AnswerText):
     type: Literal["text"] = "text"
 
 
+class AttachmentsBlock(BaseModel):
+    type: Literal["attachments"] = "attachments"
+    attachments: list[Attachment] = Field(min_length=1)
+
+
 class AgentResponse(BaseModel):
     request_message_id: UUID
-    blocks: list[TextBlock] = Field(min_length=1)
+    blocks: list[TextBlock | AttachmentsBlock] = Field(min_length=1)
     history_summary: str | None = None

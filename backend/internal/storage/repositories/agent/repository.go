@@ -105,6 +105,10 @@ func (r *Repository) SaveResponse(ctx context.Context, response models.AgentResp
 			}
 
 			for _, attachment := range block.Attachments.Attachments {
+				// Campus images are shared objects. The message blocks retain their references.
+				if strings.HasPrefix(attachment.ObjectKey, "campus/") {
+					continue
+				}
 				_, err = tx.Exec(ctx, `
 					INSERT INTO attachments
 					    (attachment_id, message_id, bucket, object_key, filename, content_type, size_bytes)

@@ -2,7 +2,14 @@ from collections import OrderedDict
 from typing import Protocol
 from uuid import UUID
 
-from app.models import AgentRequest, AgentResponse, ConversationContext, TextBlock, UserAnswer
+from app.models import (
+    AgentRequest,
+    AgentResponse,
+    AttachmentsBlock,
+    ConversationContext,
+    TextBlock,
+    UserAnswer,
+)
 
 SYSTEM_PROMPT = """Ты — дружелюбный помощник Уфимского университета науки и технологий (УУНиТ).
 Отвечай на языке пользователя.
@@ -24,6 +31,10 @@ SYSTEM_PROMPT = """Ты — дружелюбный помощник Уфимск
 Не добавляй общий вопрос вроде «Чем ещё могу помочь?» автоматически.
 
 Для вопросов о конкретном университете используй инструменты и опирайся на их результаты.
+Если пользователь просит фото, вызови list_photos. Для конкретного объекта сначала найди его ID.
+Если подтверждённого снимка нет, повтори поиск с include_unverified.
+Помечай архивные снимки и вероятные привязки. Фото, привязанное только к филиалу,
+можно предложить как фото филиала. Для конкретного корпуса нужна привязка к объекту.
 Для точного адреса или номера ищи по структурированным полям. При неоднозначном номере
 уточни город или филиал. При спорном адресе сообщи о расхождении.
 Для свободного описания ситуации используй смысловой поиск. За документами, сроками
@@ -81,9 +92,15 @@ class AgentService:
             answer = UserAnswer(message=answer)
 
         history_summary = answer.history_summary.strip() if request.conversation is not None else ""
+        blocks: list[TextBlock | AttachmentsBlock] = [
+            TextBlock(message=answer.message, source=answer.source)
+        ]
+        if answer.photos:
+            blocks.append(AttachmentsBlock(attachments=answer.photos))
+
         response = AgentResponse(
             request_message_id=request.message_id,
-            blocks=[TextBlock(message=answer.message, source=answer.source)],
+            blocks=blocks,
             history_summary=history_summary or None,
         )
 

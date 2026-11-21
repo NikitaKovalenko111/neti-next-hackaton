@@ -7,11 +7,12 @@ import httpx
 
 from app.clients.openrouter import OpenRouterClient, answer_text
 from app.config import Settings
-from app.models import ConversationContext, UserAnswer
+from app.models import Attachment, ConversationContext, UserAnswer
 from app.services.answer import (
     ANSWER_FORMAT,
     HISTORY_SUMMARY_LIMIT,
     answer_format_with_history,
+    collect_campus_photos,
     collect_source_urls,
     model_tool_data,
     parse_user_answer,
@@ -73,6 +74,7 @@ class ToolCallingAgent:
         messages.append({"role": "user", "content": user_prompt})
         remaining = MAX_TOOL_CALLS
         allowed_sources: set[str] = set()
+        allowed_photos: dict[str, Attachment] = {}
 
         for _ in range(MAX_TOOL_ROUNDS):
             message = await self.model.chat(messages, self.tools)
@@ -88,7 +90,7 @@ class ToolCallingAgent:
             assistant = {**message, "role": "assistant", "tool_calls": calls[:remaining]}
             messages.append(assistant)
             for call in assistant["tool_calls"]:
-                messages.append(await self.tool_message(call, allowed_sources))
+                messages.append(await self.tool_message(call, allowed_sources, allowed_photos))
 
             remaining -= len(assistant["tool_calls"])
             if remaining == 0:
@@ -106,7 +108,9 @@ class ToolCallingAgent:
                     "в message один конкретный уточняющий вопрос. "
                     "Верни объект JSON. В message пиши ответ без ссылок на источники и раздела "
                     "«Источники». В source верни массив ссылок из результатов инструментов, "
-                    "на которые опирается ответ. При отсутствии источников верни пустой массив."
+                    "на которые опирается ответ. При отсутствии источников верни пустой массив. "
+                    "В photo_ids верни ID снимков из list_photos, если пользователь запросил "
+                    "фото и у этих снимков photo_available=true. Иначе верни пустой массив."
                 ),
             }
         )
@@ -123,7 +127,7 @@ class ToolCallingAgent:
         )
         if not final.get("tool_calls"):
             try:
-                return parse_user_answer(answer_text(final), allowed_sources)
+                return parse_user_answer(answer_text(final), allowed_sources, allowed_photos)
             except ValueError:
                 logger.warning("OpenRouter returned an invalid final answer format")
 
@@ -160,7 +164,9 @@ class ToolCallingAgent:
                 messages.append({"role": "assistant", "content": turn.assistant_message})
         return messages
 
-    async def tool_message(self, call: dict, allowed_sources: set[str]) -> dict:
+    async def tool_message(
+        self, call: dict, allowed_sources: set[str], allowed_photos: dict[str, Attachment]
+    ) -> dict:
         function = call.get("function") if isinstance(call, dict) else None
         name = function.get("name") if isinstance(function, dict) else None
         if not isinstance(name, str) or not name:
@@ -183,6 +189,8 @@ class ToolCallingAgent:
             result = {"status": "invalid_arguments", "errors": [{"field": "", "type": "dict_type"}]}
 
         allowed_sources.update(collect_source_urls(result))
+        if name == "list_photos":
+            allowed_photos.update(collect_campus_photos(result))
         return {
             "role": "tool",
             "tool_call_id": call_id,

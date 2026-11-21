@@ -1,7 +1,8 @@
 import re
 from urllib.parse import urlsplit
+from uuid import uuid4
 
-from app.models import UserAnswer
+from app.models import Attachment, UserAnswer
 
 HISTORY_SUMMARY_LIMIT = 2400
 
@@ -15,8 +16,9 @@ ANSWER_FORMAT = {
             "properties": {
                 "message": {"type": "string"},
                 "source": {"type": "array", "items": {"type": "string"}},
+                "photo_ids": {"type": "array", "items": {"type": "string"}},
             },
-            "required": ["message", "source"],
+            "required": ["message", "source", "photo_ids"],
             "additionalProperties": False,
         },
     },
@@ -35,7 +37,7 @@ def answer_format_with_history() -> dict:
                     **ANSWER_FORMAT["json_schema"]["schema"]["properties"],
                     "history_summary": {"type": "string"},
                 },
-                "required": ["message", "source", "history_summary"],
+                "required": ["message", "source", "photo_ids", "history_summary"],
                 "additionalProperties": False,
             },
         },
@@ -43,7 +45,15 @@ def answer_format_with_history() -> dict:
 
 
 _SOURCE_FIELDS = {"source", "sources", "source_url"}
-_INTERNAL_FIELDS = {"verification", "checked_on", "checked_at", "similarity"}
+_INTERNAL_FIELDS = {
+    "verification",
+    "checked_on",
+    "checked_at",
+    "similarity",
+    "minio_bucket",
+    "object_key",
+    "content_type",
+}
 # Links belong in source even if the provider repeats them in the prose.
 _LINK = re.compile(r"\[([^\]\n]+)\]\((https?://[^\s)]+)\)|https?://[^\s<>]+")
 
@@ -84,7 +94,40 @@ def model_tool_data(data: object) -> object:
     return data
 
 
-def parse_user_answer(content: str, allowed_sources: set[str]) -> UserAnswer:
+def collect_campus_photos(result: dict) -> dict[str, Attachment]:
+    if result.get("status") != "ok" or not isinstance(result.get("data"), list):
+        return {}
+
+    photos = {}
+    for row in result["data"]:
+        if not isinstance(row, dict):
+            continue
+        photo_id = row.get("id")
+        key = row.get("object_key")
+        bucket = row.get("minio_bucket")
+        if (
+            row.get("photo_available") is True
+            and isinstance(photo_id, str)
+            and re.fullmatch(r"[a-z0-9-]+", photo_id)
+            and isinstance(key, str)
+            and key.startswith("campus/")
+            and isinstance(bucket, str)
+            and bucket
+            and row.get("content_type") == "image/jpeg"
+        ):
+            photos[photo_id] = Attachment(
+                attachment_id=uuid4(),
+                bucket=bucket,
+                object_key=key,
+                filename=f"{photo_id}.jpg",
+                content_type="image/jpeg",
+            )
+    return photos
+
+
+def parse_user_answer(
+    content: str, allowed_sources: set[str], allowed_photos: dict[str, Attachment]
+) -> UserAnswer:
     answer = UserAnswer.model_validate_json(content.removesuffix("<|endoftext|>").rstrip())
     cited = dict.fromkeys(url for url in answer.source if url in allowed_sources)
 
@@ -103,5 +146,6 @@ def parse_user_answer(content: str, allowed_sources: set[str]) -> UserAnswer:
     return UserAnswer(
         message=message,
         source=list(cited),
+        photos=[allowed_photos[i] for i in dict.fromkeys(answer.photo_ids) if i in allowed_photos],
         history_summary=answer.history_summary.strip()[:HISTORY_SUMMARY_LIMIT],
     )

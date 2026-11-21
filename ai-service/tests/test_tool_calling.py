@@ -214,3 +214,55 @@ async def test_conversation_context_and_annotation_cross_queue_boundary(settings
     payload = result.model_dump(mode="json", exclude_none=True)
     assert payload["history_summary"].endswith("в Уфе.")
     assert "history_summary" not in payload["blocks"][0]
+
+
+async def test_agent_attaches_only_imported_campus_photos(settings, request_message):
+    fake_tool = AsyncMock(
+        return_value={
+            "status": "ok",
+            "data": [
+                {
+                    "id": "ishimbay-photo-001",
+                    "photo_available": True,
+                    "object_key": "campus/ishimbay-photo-001-test.jpg",
+                    "minio_bucket": "images",
+                    "content_type": "image/jpeg",
+                },
+                {"id": "unavailable-photo", "photo_available": False},
+            ],
+        }
+    )
+
+    def respond(request):
+        payload = json.loads(request.content)
+        if payload.get("tool_choice") == "none":
+            return reply(
+                content=json.dumps(
+                    {
+                        "message": "Вот архивное фото филиала.",
+                        "source": [],
+                        "photo_ids": [
+                            "ishimbay-photo-001",
+                            "ishimbay-photo-001",
+                            "unavailable-photo",
+                            "invented-photo",
+                        ],
+                    }
+                )
+            )
+        if payload["messages"][-1]["role"] == "tool":
+            assert "object_key" not in payload["messages"][-1]["content"]
+            return reply(content="Вот архивное фото филиала.")
+        return reply(tool_calls=[tool_call("list_photos", place_id="ishimbay-main")])
+
+    async with httpx.AsyncClient(
+        base_url=str(settings.openrouter_base_url),
+        transport=httpx.MockTransport(respond),
+    ) as client:
+        service = AgentService(ToolCallingAgent(OpenRouterClient(client, settings), fake_tool))
+        result = await service.process(request_message)
+
+    blocks = result.model_dump(mode="json")["blocks"]
+    assert blocks[-1]["type"] == "attachments"
+    assert len(blocks[-1]["attachments"]) == 1
+    assert blocks[-1]["attachments"][0]["object_key"] == "campus/ishimbay-photo-001-test.jpg"

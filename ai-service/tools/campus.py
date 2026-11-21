@@ -132,7 +132,11 @@ async def list_photos(
 ) -> list[dict]:
     rows = await connection.fetch(
         """
-        SELECT ph.payload - 'source_ids' || jsonb_build_object(
+        SELECT (ph.payload - 'source_ids' - 'url') || jsonb_build_object(
+            'photo_available', ph.object_key IS NOT NULL,
+            'minio_bucket', ph.minio_bucket,
+            'object_key', ph.object_key,
+            'content_type', ph.content_type,
             'sources', ARRAY(SELECT to_jsonb(s) FROM rag.campus_sources s
                              WHERE ph.payload->'source_ids' ? s.id ORDER BY s.id)
         ) AS data
