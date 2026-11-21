@@ -77,6 +77,7 @@ func TestFullPipeline(t *testing.T) {
 	_ = listener.Close()
 
 	cfg := config.Config{
+		JWTSecret:             strings.Repeat("a", 32),
 		HTTPAddress:           address,
 		PostgresURL:           databaseURL,
 		RabbitMQURL:           brokerURL,

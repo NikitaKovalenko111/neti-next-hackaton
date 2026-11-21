@@ -28,10 +28,11 @@ type File struct {
 }
 
 type Input struct {
-	UserID  string
-	ChatID  string
-	Message string
-	Files   []File
+	Registered bool
+	UserID     string
+	ChatID     string
+	Message    string
+	Files      []File
 }
 
 type Attachment struct {
@@ -49,12 +50,13 @@ type Result struct {
 }
 
 type Record struct {
-	UserID  uuid.UUID
-	NewChat bool
-	Message string
-	Result  Result
-	Task    models.AgentRequest
-	Blocks  []models.Block
+	Registered bool
+	UserID     uuid.UUID
+	NewChat    bool
+	Message    string
+	Result     Result
+	Task       models.AgentRequest
+	Blocks     []models.Block
 }
 
 type Repository interface {
@@ -189,7 +191,7 @@ func (s *Service) Create(ctx context.Context, input Input) (Result, error) {
 	}
 
 	err = s.repo.Save(ctx, Record{
-		UserID: userID, NewChat: newChat, Message: message,
+		Registered: input.Registered, UserID: userID, NewChat: newChat, Message: message,
 		Result: result, Task: task, Blocks: blocks,
 	})
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 	service "university-agent/internal/services/chat"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -19,9 +20,12 @@ func New(db *pgxpool.Pool) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) History(ctx context.Context, chatID, userID uuid.UUID, after *uuid.UUID) ([]models.HistoryMessage, error) {
+func (r *Repository) History(ctx context.Context, chatID, userID uuid.UUID, after *uuid.UUID, registered bool) ([]models.HistoryMessage, error) {
 	var exists bool
-	err := r.db.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM chats WHERE id = $1 AND user_id = $2)`, chatID, userID).Scan(&exists)
+	err := r.db.QueryRow(ctx, `
+		SELECT EXISTS (SELECT 1 FROM chats WHERE id = $1 AND user_id = $2
+		  AND CASE WHEN $3::boolean THEN guest_expires_at IS NULL ELSE guest_expires_at > now() END)`,
+		chatID, userID, registered).Scan(&exists)
 	if err != nil {
 		return nil, err
 	}
@@ -64,4 +68,14 @@ func (r *Repository) History(ctx context.Context, chatID, userID uuid.UUID, afte
 	}
 
 	return messages, rows.Err()
+}
+
+func (r *Repository) List(ctx context.Context, userID uuid.UUID) ([]models.Chat, error) {
+	rows, err := r.db.Query(ctx, `
+		SELECT id, created_at FROM chats WHERE user_id = $1 AND guest_expires_at IS NULL
+		ORDER BY created_at DESC, id`, userID)
+	if err != nil {
+		return nil, err
+	}
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[models.Chat])
 }

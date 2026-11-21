@@ -58,3 +58,8 @@ type HistoryMessage struct {
 	RequestMessageID *uuid.UUID `json:"request_message_id,omitempty"`
 	CreatedAt        time.Time  `json:"created_at"`
 }
+
+type Chat struct {
+	ID        uuid.UUID `json:"chat_id"`
+	CreatedAt time.Time `json:"created_at"`
+}

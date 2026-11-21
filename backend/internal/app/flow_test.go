@@ -18,10 +18,12 @@ import (
 	"university-agent/internal/migrations"
 	"university-agent/internal/models"
 	agentservice "university-agent/internal/services/agent"
+	authservice "university-agent/internal/services/auth"
 	blockservice "university-agent/internal/services/blocks"
 	chatservice "university-agent/internal/services/chat"
 	requestservice "university-agent/internal/services/request"
 	agentrepo "university-agent/internal/storage/repositories/agent"
+	authrepo "university-agent/internal/storage/repositories/auth"
 	chatrepo "university-agent/internal/storage/repositories/chat"
 	requestrepo "university-agent/internal/storage/repositories/request"
 	transport "university-agent/internal/transport/http"
@@ -93,7 +95,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	agent := agentservice.New(agentrepo.New(db), publisher, hub, blocks)
 	request := requestservice.New(requestrepo.New(db), store, "images")
 	history := chatservice.New(chatrepo.New(db), blocks)
-	server := httptest.NewServer(transport.New(ctx, request, hub, history))
+	server := httptest.NewServer(transport.New(ctx, request, hub, history, authservice.New(authrepo.New(db), strings.Repeat("a", 32)), false))
 	defer server.Close()
 
 	userID := uuid.NewString()
@@ -203,7 +205,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		reply.HistorySummary = "Changed summary"
 	}
 
-	messages, err := history.History(ctx, accepted.ChatID.String(), userID, "")
+	messages, err := history.History(ctx, accepted.ChatID.String(), userID, "", false)
 	if err != nil || len(messages) != 2 {
 		t.Fatalf("history: %+v %v", messages, err)
 	}
@@ -232,10 +234,10 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	if err := db.QueryRow(ctx, `SELECT blocks FROM messages WHERE id = $1`, first.MessageID).Scan(&persisted); err != nil || bytes.Contains(persisted, []byte(`"url"`)) {
 		t.Fatalf("signed URL was persisted: %s %v", persisted, err)
 	}
-	if _, err := history.History(ctx, accepted.ChatID.String(), uuid.NewString(), ""); err != chatservice.ErrNotFound {
+	if _, err := history.History(ctx, accepted.ChatID.String(), uuid.NewString(), "", false); err != chatservice.ErrNotFound {
 		t.Fatalf("other user history: %v", err)
 	}
-	messages, err = history.History(ctx, accepted.ChatID.String(), userID, accepted.MessageID.String())
+	messages, err = history.History(ctx, accepted.ChatID.String(), userID, accepted.MessageID.String(), false)
 	if err != nil || len(messages) != 1 || messages[0].ID != first.MessageID {
 		t.Fatalf("cursor: %+v %v", messages, err)
 	}
@@ -329,7 +331,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		}
 	}
 
-	messages, err = history.History(ctx, accepted.ChatID.String(), userID, "")
+	messages, err = history.History(ctx, accepted.ChatID.String(), userID, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
