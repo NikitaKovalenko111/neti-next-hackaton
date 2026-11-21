@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"university-agent/internal/models"
+	"university-agent/internal/transport/http/handlers/auth"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -23,10 +24,12 @@ type Handler struct {
 var upgrader = websocket.Upgrader{HandshakeTimeout: 5 * time.Second}
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	userID, err := uuid.Parse(r.URL.Query().Get("user_id"))
-	if err != nil || userID == uuid.Nil {
-		http.Error(w, "valid user_id is required", http.StatusBadRequest)
-		return
+	identity := auth.FromContext(r.Context())
+	var expires <-chan time.Time
+	if identity.Registered() {
+		timer := time.NewTimer(time.Until(identity.ExpiresAt))
+		defer timer.Stop()
+		expires = timer.C
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -35,7 +38,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	events, unsubscribe := h.Sessions.Subscribe(userID)
+	events, unsubscribe := h.Sessions.Subscribe(identity.UserID)
 	defer unsubscribe()
 
 	conn.SetReadLimit(1024)
@@ -66,6 +69,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case <-h.Context.Done():
+			return
+		case <-expires:
 			return
 		case <-done:
 			return

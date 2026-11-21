@@ -15,7 +15,8 @@ var (
 )
 
 type Repository interface {
-	History(context.Context, uuid.UUID, uuid.UUID, *uuid.UUID) ([]models.HistoryMessage, error)
+	List(context.Context, uuid.UUID) ([]models.Chat, error)
+	History(context.Context, uuid.UUID, uuid.UUID, *uuid.UUID, bool) ([]models.HistoryMessage, error)
 }
 
 type Service struct {
@@ -31,7 +32,7 @@ func New(repo Repository, blocks BlockPresenter) *Service {
 	return &Service{repo: repo, blocks: blocks}
 }
 
-func (s *Service) History(ctx context.Context, chat, user, after string) ([]models.HistoryMessage, error) {
+func (s *Service) History(ctx context.Context, chat, user, after string, registered bool) ([]models.HistoryMessage, error) {
 	chatID, err := uuid.Parse(chat)
 	if err != nil || chatID == uuid.Nil {
 		return nil, ErrInvalid
@@ -51,7 +52,7 @@ func (s *Service) History(ctx context.Context, chat, user, after string) ([]mode
 		cursor = &id
 	}
 
-	messages, err := s.repo.History(ctx, chatID, userID, cursor)
+	messages, err := s.repo.History(ctx, chatID, userID, cursor, registered)
 	if err != nil {
 		return nil, err
 	}
@@ -64,4 +65,8 @@ func (s *Service) History(ctx context.Context, chat, user, after string) ([]mode
 	}
 
 	return messages, nil
+}
+
+func (s *Service) List(ctx context.Context, user uuid.UUID) ([]models.Chat, error) {
+	return s.repo.List(ctx, user)
 }

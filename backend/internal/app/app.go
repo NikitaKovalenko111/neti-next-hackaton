@@ -16,11 +16,13 @@ import (
 	"university-agent/internal/objectstorage"
 	"university-agent/internal/queue"
 	agentservice "university-agent/internal/services/agent"
+	authservice "university-agent/internal/services/auth"
 	blockservice "university-agent/internal/services/blocks"
 	chatservice "university-agent/internal/services/chat"
 	requestservice "university-agent/internal/services/request"
 	"university-agent/internal/storage"
 	agentrepo "university-agent/internal/storage/repositories/agent"
+	authrepo "university-agent/internal/storage/repositories/auth"
 	chatrepo "university-agent/internal/storage/repositories/chat"
 	requestrepo "university-agent/internal/storage/repositories/request"
 	transport "university-agent/internal/transport/http"
@@ -35,6 +37,9 @@ func Run(cfg config.Config) error {
 }
 
 func RunContext(parent context.Context, cfg config.Config) error {
+	if len(cfg.JWTSecret) < 32 {
+		return fmt.Errorf("JWT_SECRET must contain at least 32 bytes")
+	}
 	runCtx, stop := context.WithCancel(parent)
 	defer stop()
 
@@ -83,7 +88,7 @@ func RunContext(parent context.Context, cfg config.Config) error {
 
 	server := &http.Server{
 		Addr:              cfg.HTTPAddress,
-		Handler:           transport.New(runCtx, service, sessions, history),
+		Handler:           transport.New(runCtx, service, sessions, history, authservice.New(authrepo.New(db), cfg.JWTSecret), cfg.JWTSecureCookie),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

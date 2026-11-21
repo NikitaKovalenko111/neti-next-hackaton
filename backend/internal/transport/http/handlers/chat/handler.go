@@ -9,10 +9,14 @@ import (
 
 	"university-agent/internal/models"
 	service "university-agent/internal/services/chat"
+	"university-agent/internal/transport/http/handlers/auth"
+
+	"github.com/google/uuid"
 )
 
 type Historian interface {
-	History(context.Context, string, string, string) ([]models.HistoryMessage, error)
+	List(context.Context, uuid.UUID) ([]models.Chat, error)
+	History(context.Context, string, string, string, bool) ([]models.HistoryMessage, error)
 }
 
 type Handler struct {
@@ -20,7 +24,9 @@ type Handler struct {
 }
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	messages, err := h.Service.History(r.Context(), r.PathValue("chat_id"), r.URL.Query().Get("user_id"), r.URL.Query().Get("after"))
+	identity := auth.FromContext(r.Context())
+	messages, err := h.Service.History(r.Context(), r.PathValue("chat_id"),
+		identity.UserID.String(), r.URL.Query().Get("after"), identity.Registered())
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalid):
@@ -36,4 +42,16 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(messages)
+}
+
+func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
+	chats, err := h.Service.List(r.Context(), auth.FromContext(r.Context()).UserID)
+	if err != nil {
+		log.Printf("list chats: %v", err)
+		http.Error(w, "storage error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(chats)
 }

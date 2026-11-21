@@ -20,6 +20,9 @@ var blocksSQL string
 //go:embed 004_conversation_context.sql
 var conversationSQL string
 
+//go:embed 005_accounts.sql
+var accountsSQL string
+
 func Apply(ctx context.Context, db *pgxpool.Pool) error {
 	tx, err := db.Begin(ctx)
 	if err != nil {
@@ -33,7 +36,7 @@ func Apply(ctx context.Context, db *pgxpool.Pool) error {
 		return err
 	}
 
-	for index, sql := range []string{initialSQL, agentSQL, blocksSQL, conversationSQL} {
+	for index, sql := range []string{initialSQL, agentSQL, blocksSQL, conversationSQL, accountsSQL} {
 		version := index + 1
 		var exists bool
 		if err = tx.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = $1)`, version).Scan(&exists); err != nil {

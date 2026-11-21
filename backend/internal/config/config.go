@@ -7,6 +7,8 @@ import (
 )
 
 type Config struct {
+	JWTSecret             string
+	JWTSecureCookie       bool
 	HTTPAddress           string
 	PostgresURL           string
 	MinIOEndpoint         string
@@ -23,6 +25,7 @@ type Config struct {
 
 func Load() (Config, error) {
 	c := Config{
+		JWTSecret:             os.Getenv("JWT_SECRET"),
 		HTTPAddress:           env("HTTP_ADDRESS", ":8080"),
 		PostgresURL:           env("POSTGRES_URL", "postgres://backend_app:backend_app@localhost:5433/university?sslmode=disable&search_path=backend"),
 		MinIOEndpoint:         env("MINIO_ENDPOINT", "localhost:9000"),
@@ -39,7 +42,15 @@ func Load() (Config, error) {
 		return Config{}, fmt.Errorf("RabbitMQ request and response queues must have different names")
 	}
 
+	if len(c.JWTSecret) < 32 {
+		return Config{}, fmt.Errorf("JWT_SECRET must contain at least 32 bytes")
+	}
+
 	var err error
+	c.JWTSecureCookie, err = strconv.ParseBool(env("JWT_SECURE_COOKIE", "false"))
+	if err != nil {
+		return Config{}, fmt.Errorf("JWT_SECURE_COOKIE: %w", err)
+	}
 	c.MinIOSecure, err = strconv.ParseBool(env("MINIO_SECURE", "false"))
 	if err != nil {
 		return Config{}, fmt.Errorf("MINIO_SECURE: %w", err)
