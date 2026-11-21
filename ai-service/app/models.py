@@ -54,10 +54,18 @@ class AnswerText(BaseModel):
     source: list[str] = Field(default_factory=list)
 
 
+class MapPoint(BaseModel):
+    title: NonEmptyText
+    latitude: float = Field(strict=True, ge=-90, le=90)
+    longitude: float = Field(strict=True, ge=-180, le=180)
+
+
 class UserAnswer(AnswerText):
     history_summary: str = ""
     photo_ids: list[str] = Field(default_factory=list)
     photos: list[Attachment] = Field(default_factory=list)
+    map_place_ids: list[str] = Field(default_factory=list)
+    map_points: list[MapPoint] = Field(default_factory=list)
 
 
 class TextBlock(AnswerText):
@@ -69,7 +77,12 @@ class AttachmentsBlock(BaseModel):
     attachments: list[Attachment] = Field(min_length=1)
 
 
+class MapBlock(BaseModel):
+    type: Literal["map"] = "map"
+    points: list[MapPoint] = Field(min_length=1)
+
+
 class AgentResponse(BaseModel):
     request_message_id: UUID
-    blocks: list[TextBlock | AttachmentsBlock] = Field(min_length=1)
+    blocks: list[TextBlock | AttachmentsBlock | MapBlock] = Field(min_length=1)
     history_summary: str | None = None

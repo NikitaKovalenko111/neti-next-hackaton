@@ -171,7 +171,7 @@ class UniversityDocumentLinks(Arguments):
 class CampusDetails(OptionalBranch):
     query: Query | None = Field(None, description="Название объекта или адрес")
     kind: Literal["building", "dormitory", "education_site"] | None = None
-    purpose: Literal["address", "accessibility", "history"] = "address"
+    purpose: Literal["address", "accessibility", "history", "map"] = "address"
 
 
 async def campus_context(
@@ -260,7 +260,8 @@ TOOLS = {
     ),
     "find_campus_details": Tool(
         "Найти карточки из нового архива с адресом, координатами, доступной средой, "
-        "паспортами доступности или историей здания. Индивидуальную доступность уточняй.",
+        "паспортами доступности или историей здания. Для карты укажи purpose=map, "
+        "филиал и название или тип объекта. Индивидуальную доступность уточняй.",
         CampusDetails,
         education.find_campus_details,
     ),

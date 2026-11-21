@@ -155,6 +155,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 
 	attachmentID := uuid.New()
 	source := "https://uust.ru/reception/pass-application/"
+	point := models.MapPoint{Title: "Campus", Latitude: 54.720714, Longitude: 55.933422}
 	reply := models.AgentResponse{
 		RequestMessageID: accepted.MessageID,
 		HistorySummary:   "Original summary",
@@ -165,6 +166,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 				Filename: "image.png", ContentType: "image/png",
 			}}}},
 			{Text: &models.TextBlock{Message: "Final paragraph"}},
+			{Map: &models.MapBlock{Points: []models.MapPoint{point}}},
 		},
 	}
 	var first models.ResponseEvent
@@ -177,12 +179,15 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 			t.Fatal(err)
 		}
 		if event.Type != "agent_response" || event.ChatID != accepted.ChatID ||
-			len(event.Blocks) != 3 || event.Blocks[0].Text.Message != "Answer" ||
+			len(event.Blocks) != 4 || event.Blocks[0].Text.Message != "Answer" ||
 			event.Blocks[2].Text.Message != "Final paragraph" {
 			t.Fatalf("invalid event: %+v", event)
 		}
 		if got := event.Blocks[0].Text.Source; len(got) != 1 || got[0] != source {
 			t.Fatalf("invalid WebSocket sources: %v", got)
+		}
+		if block := event.Blocks[3].Map; block == nil || len(block.Points) != 1 || block.Points[0] != point {
+			t.Fatalf("invalid WebSocket map: %+v", block)
 		}
 		attachment := event.Blocks[1].Attachments.Attachments[0]
 		if attachment.ID != attachmentID || attachment.SizeBytes != 12 || attachment.URL == "" {
@@ -206,11 +211,14 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		t.Fatalf("invalid roles: %+v", messages)
 	}
 	if len(messages[0].Blocks) != 2 || messages[0].Blocks[0].Text.Message != "Question" ||
-		len(messages[1].Blocks) != 3 || messages[1].Blocks[0].Text.Message != "Answer" {
+		len(messages[1].Blocks) != 4 || messages[1].Blocks[0].Text.Message != "Answer" {
 		t.Fatalf("invalid history blocks: %+v", messages)
 	}
 	if got := messages[1].Blocks[0].Text.Source; len(got) != 1 || got[0] != source {
 		t.Fatalf("invalid history sources: %v", got)
+	}
+	if block := messages[1].Blocks[3].Map; block == nil || len(block.Points) != 1 || block.Points[0] != point {
+		t.Fatalf("invalid history map: %+v", block)
 	}
 	if messages[1].Blocks[1].Attachments.Attachments[0].URL == first.Blocks[1].Attachments.Attachments[0].URL {
 		t.Fatal("history did not generate a fresh attachment URL")

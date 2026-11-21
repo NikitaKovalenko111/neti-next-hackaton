@@ -301,6 +301,10 @@ async def find_campus_details(
                         ),
                         'documents', data->'documents'
                     )
+                    WHEN $4::text = 'map' THEN jsonb_build_object(
+                        'address', data->'address', 'kind', data->'kind',
+                        'latitude', data->'latitude', 'longitude', data->'longitude'
+                    )
                     ELSE data - ARRAY['facilities', 'registry', 'photos', 'documents']
                END AS data
         FROM rag.knowledge_records
@@ -310,8 +314,12 @@ async def find_campus_details(
                OR strpos(lower(title), lower($1)) > 0)
           AND ($2::text IS NULL OR branch_id = $2)
           AND ($3::text IS NULL OR $4::text = 'history' OR data->>'kind' = $3)
-        ORDER BY title, id
-        LIMIT 6
+          AND ($4::text <> 'map'
+               OR (jsonb_typeof(data->'latitude') = 'number'
+                   AND jsonb_typeof(data->'longitude') = 'number'))
+        ORDER BY CASE WHEN $4::text = 'map' AND lower(title) = lower($1) THEN 0 ELSE 1 END,
+                 title, id
+        LIMIT CASE WHEN $4::text = 'map' THEN 20 ELSE 6 END
         """,
         query,
         branch_id,
