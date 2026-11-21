@@ -1,0 +1,16 @@
+services:
+  postgres:
+    ports: !override
+      - "0.0.0.0:${COLAB_POSTGRES_PORT:-15432}:5432"
+
+  rabbitmq:
+    ports: !override
+      - "0.0.0.0:${COLAB_RABBITMQ_PORT:-25673}:5672"
+
+  backend:
+    ports: !override
+      - "0.0.0.0:${COLAB_BACKEND_PORT:-18080}:8080"
+
+  minio:
+    ports: !override
+      - "0.0.0.0:${COLAB_MINIO_PORT:-19000}:9000"
