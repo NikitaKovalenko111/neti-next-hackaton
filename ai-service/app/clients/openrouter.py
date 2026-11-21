@@ -26,8 +26,9 @@ class OpenRouterClient:
         messages: list[dict],
         tools: list[dict] | None = None,
         *,
-        tool_choice: str | None = None,
+        tool_choice: str | dict | None = None,
         response_format: dict | None = None,
+        reasoning: bool | None = None,
     ) -> dict:
         request = {
             "model": self.settings.openrouter_model,
@@ -43,6 +44,8 @@ class OpenRouterClient:
 
         if response_format is not None:
             request["response_format"] = response_format
+        if reasoning is not None:
+            request["reasoning"] = {"enabled": reasoning}
 
         response = await self.client.post("chat/completions", json=request)
         response.raise_for_status()

@@ -7,7 +7,8 @@ import asyncpg
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from tools import campus, support
+from app import university_knowledge
+from tools import campus, education, support
 
 logger = logging.getLogger(__name__)
 
@@ -73,6 +74,106 @@ class Channels(Branch):
     include_consultations: bool = Field(False, description="Включить профком и консультации")
 
 
+class KnowledgeSearch(OptionalBranch):
+    query: Query | None = Field(None, description="Ключевые слова по названию или теме")
+    category: Identifier | None = None
+    reference_code: Annotated[str, Field(max_length=60)] | None = None
+
+
+class KnowledgeRecord(Arguments):
+    record_id: Identifier
+
+
+class KnowledgeNotes(Arguments):
+    query: Query
+    category: Identifier | None = None
+
+
+ProgramCode = Annotated[str, Field(pattern=r"^[0-9]{2}\.[0-9]{2}\.[0-9]{2}$")]
+StudyForm = Literal["очная", "очно-заочная", "заочная"]
+AcademicYear = Annotated[int, Field(ge=2000, le=2100)]
+
+
+class AdmissionOptions(OptionalBranch):
+    query: Query | None = Field(None, description="Название программы или направления")
+    codes: list[ProgramCode] = Field(default_factory=list, max_length=5)
+    metric: Literal["all", "programs", "tuition_fees", "passing_scores", "entrance_tests"] = "all"
+    form: StudyForm | None = Field(None, description="Фильтр цен и проходных баллов")
+    funding: Literal["budget", "contract"] | None = Field(
+        None, description="Фильтр проходных баллов"
+    )
+    exam_scope: (
+        Literal[
+            "secondary_school_budget",
+            "vocational_or_higher",
+            "vocational_or_higher_contract",
+            "english_language",
+        ]
+        | None
+    ) = Field(None, description="Категория вступительных испытаний")
+    year: AcademicYear | None = Field(None, description="Год приёмной кампании")
+    max_annual_rub: int | None = Field(None, ge=0, description="Максимальная стоимость в год")
+    max_passing_score: int | None = Field(None, ge=0, description="Верхняя граница прошлых баллов")
+
+
+class Curricula(OptionalBranch):
+    query: Query | None = Field(None, description="Название профиля или направления")
+    reference_code: ProgramCode | None = None
+    form: StudyForm | None = None
+    entry_year: AcademicYear | None = None
+    subject: Query | None = Field(None, description="Дисциплина из опубликованного списка")
+
+
+class AdmissionRules(Arguments):
+    topic: Literal["olympiads", "achievements", "medical_exam"]
+    reference_code: ProgramCode | None = Field(None, description="Код для поиска медосмотра")
+    year: AcademicYear | None = None
+
+
+class UniversityContacts(OptionalBranch):
+    person: Query | None = Field(None, description="Фамилия, имя или должность")
+    unit: Query | None = Field(None, description="Фрагмент названия кафедры или института")
+    kind: Literal[
+        "all", "institutes", "departments", "staff", "leadership", "pedagogical_register"
+    ] = "all"
+
+
+class UniversityDates(OptionalBranch):
+    topic: Literal["admission_deadlines", "housing_schedule"]
+    year: AcademicYear | None = None
+
+
+class Scholarships(Arguments):
+    query: Query | None = Field(None, description="Имя стипендии или ключевые слова")
+    kind: (
+        Literal[
+            "gas",
+            "pgas",
+            "gss",
+            "increased_gss",
+            "named",
+            "federal",
+            "external",
+            "regional",
+            "postgraduate",
+            "freshmen",
+        ]
+        | None
+    ) = None
+
+
+class UniversityDocumentLinks(Arguments):
+    query: Query | None = Field(None, description="Название, например академический отпуск")
+    act_number: Annotated[str, Field(pattern=r"^0*[1-9][0-9]*$", max_length=12)] | None = None
+    year: AcademicYear | None = None
+
+
+class CampusDetails(OptionalBranch):
+    query: Query | None = Field(None, description="Название объекта или адрес")
+    kind: Literal["building", "dormitory", "education_site"] | None = None
+    purpose: Literal["address", "accessibility", "history"] = "address"
+
+
 async def campus_context(
     connection: asyncpg.Connection,
     client: httpx.AsyncClient,
@@ -115,6 +216,73 @@ class Tool:
 
 
 TOOLS = {
+    "get_admission_options": Tool(
+        "Сравнить программы, стоимость за год, прошлые проходные баллы и вступительные "
+        "испытания. При точном вопросе укажи metric, коды направлений и известные фильтры.",
+        AdmissionOptions,
+        education.get_admission_options,
+    ),
+    "find_curricula": Tool(
+        "Найти учебный план, календарный график, примеры практик и дисциплины по коду, "
+        "профилю, форме или году набора. Учебный план не является расписанием занятий.",
+        Curricula,
+        education.find_curricula,
+    ),
+    "get_admission_rules": Tool(
+        "Узнать условия приёма по олимпиаде (БВИ или 100 баллов), баллы за индивидуальные "
+        "достижения либо требование о медосмотре. Для медосмотра укажи код направления.",
+        AdmissionRules,
+        education.get_admission_rules,
+    ),
+    "find_university_contacts": Tool(
+        "Найти опубликованные контакты, адрес подразделения, руководителя или сотрудника "
+        "по фамилии, должности, кафедре, институту или филиалу.",
+        UniversityContacts,
+        education.find_university_contacts,
+    ),
+    "get_university_dates": Tool(
+        "Получить даты приёмной кампании или опубликованный график заселения по филиалу. "
+        "Уточняй период и группу, к которым относятся даты.",
+        UniversityDates,
+        education.get_university_dates,
+    ),
+    "find_scholarships": Tool(
+        "Найти размеры, условия и даты стипендий, включая академические, социальные, "
+        "именные и выплаты первокурсникам. Для матпомощи используй инструменты поддержки.",
+        Scholarships,
+        education.find_scholarships,
+    ),
+    "find_university_document_links": Tool(
+        "Найти оригинал приказа, положения или бланка по названию, номеру или году. "
+        "Для объяснения правил по смыслу используй search_university_documents.",
+        UniversityDocumentLinks,
+        education.find_university_document_links,
+    ),
+    "find_campus_details": Tool(
+        "Найти карточки из нового архива с адресом, координатами, доступной средой, "
+        "паспортами доступности или историей здания. Индивидуальную доступность уточняй.",
+        CampusDetails,
+        education.find_campus_details,
+    ),
+    "search_university_records": Tool(
+        "Найти точные данные УУНиТ по ключевым словам, филиалу или коду направления. "
+        "Категории включают programs, curricula, entrance_tests, passing_scores, tuition_fees, "
+        "scholarships, admissions_rules, admission_deadlines, documents, staff, departments, "
+        "campus_places, housing_schedule.",
+        KnowledgeSearch,
+        university_knowledge.search_records,
+    ),
+    "get_university_record": Tool(
+        "Получить полную карточку и источники по идентификатору из search_university_records.",
+        KnowledgeRecord,
+        university_knowledge.get_record,
+    ),
+    "search_university_documents": Tool(
+        "Найти по смыслу аннотации университетских документов, даты, правила и источники.",
+        KnowledgeNotes,
+        university_knowledge.search_notes,
+        "rag.knowledge_embeddings",
+    ),
     "list_branches": Tool(
         "Найти филиал по городу или получить список филиалов, адреса и сайты.",
         BranchSearch,

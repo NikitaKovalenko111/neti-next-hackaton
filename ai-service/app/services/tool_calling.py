@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from collections.abc import Awaitable, Callable
 
 import asyncpg
@@ -12,6 +13,7 @@ from app.services.answer import (
     ANSWER_FORMAT,
     HISTORY_SUMMARY_LIMIT,
     answer_format_with_history,
+    answer_from_draft,
     collect_campus_photos,
     collect_source_urls,
     model_tool_data,
@@ -23,6 +25,8 @@ from tools import call_tool, tool_definitions
 MAX_TOOL_ROUNDS = 4
 MAX_TOOL_CALLS = 8
 HISTORY_BATCH_SIZE = 8
+PROGRAM_CODE = re.compile(r"\b[0-9]{2}\.[0-9]{2}\.[0-9]{2}\b")
+PASSING_SCORE_QUERY = re.compile(r"проходн\w*\s+балл\w*", re.IGNORECASE)
 SUMMARY_PROMPT = (
     "Обнови краткую аннотацию чата по полученной истории. Сохрани цель пользователя, "
     "важные детали, принятые решения и открытые вопросы. Учитывай исправления пользователя. "
@@ -73,19 +77,36 @@ class ToolCallingAgent:
             messages.extend(await self.context_messages(conversation))
         messages.append({"role": "user", "content": user_prompt})
         remaining = MAX_TOOL_CALLS
+        draft = None
         allowed_sources: set[str] = set()
         allowed_photos: dict[str, Attachment] = {}
 
+        tool_choice = None
+        if PROGRAM_CODE.search(user_prompt) and PASSING_SCORE_QUERY.search(user_prompt):
+            tool_choice = {"type": "function", "function": {"name": "get_admission_options"}}
+            messages[0]["content"] += (
+                "\nСначала проверь проходной балл. Вызови get_admission_options с "
+                "metric=passing_scores. "
+                "Передай код направления и указанные пользователем филиал, год, форму и оплату."
+            )
+
         for _ in range(MAX_TOOL_ROUNDS):
-            message = await self.model.chat(messages, self.tools)
+            message = await self.model.chat(messages, self.tools, tool_choice=tool_choice)
             calls = message.get("tool_calls") or []
             if not calls:
-                draft = message.get("content")
-                if isinstance(draft, str) and draft.strip():
-                    messages.append({"role": "assistant", "content": draft.strip()})
+                if tool_choice is not None:
+                    logger.warning("OpenRouter skipped the required admission lookup")
+                    return UserAnswer(
+                        message="Не удалось проверить проходной балл. Попробуйте ещё раз."
+                    )
+                content = message.get("content")
+                if isinstance(content, str) and content.strip():
+                    draft = content.strip()
+                    messages.append({"role": "assistant", "content": draft})
                 break
             if not isinstance(calls, list):
                 raise ValueError("OpenRouter returned invalid tool calls")
+            tool_choice = None
 
             assistant = {**message, "role": "assistant", "tool_calls": calls[:remaining]}
             messages.append(assistant)
@@ -103,10 +124,14 @@ class ToolCallingAgent:
                     "Ответь на последнюю реплику пользователя в диалоге перед этим указанием. "
                     "Если это уточнение, примени его к исходной задаче из предыдущих реплик. "
                     "Учитывай уже названный город, вуз и обстоятельства. "
+                    "Если готовый ответ уже есть, сохрани его тему и конкретные советы. "
+                    "Пиши на языке последнего сообщения пользователя, кроме названий и терминов. "
+                    "Утверждения о конкретных программах вуза подтверждай результатами поиска. "
                     "Если просили составить текст, приведи сам текст в message. "
                     "Если для следующего шага нужна важная деталь, сохрани "
                     "в message один конкретный уточняющий вопрос. "
-                    "Верни объект JSON. В message пиши ответ без ссылок на источники и раздела "
+                    "Верни только объект JSON, без рассуждений. В message пиши ответ без ссылок "
+                    "на источники и раздела "
                     "«Источники». В source верни массив ссылок из результатов инструментов, "
                     "на которые опирается ответ. При отсутствии источников верни пустой массив. "
                     "В photo_ids верни ID снимков из list_photos, если пользователь запросил "
@@ -122,17 +147,33 @@ class ToolCallingAgent:
             )
             response_format = answer_format_with_history()
 
-        final = await self.model.chat(
-            messages, self.tools, tool_choice="none", response_format=response_format
-        )
-        if not final.get("tool_calls"):
+        for attempt in range(2):
+            final = await self.model.chat(
+                messages,
+                self.tools,
+                tool_choice="none",
+                response_format=response_format,
+                reasoning=False,
+            )
+            if not final.get("tool_calls"):
+                try:
+                    return parse_user_answer(answer_text(final), allowed_sources, allowed_photos)
+                except ValueError:
+                    logger.warning("OpenRouter returned an invalid final answer format")
+            if attempt == 0:
+                messages[-1]["content"] += (
+                    " Выведи только полный JSON по схеме. Не добавляй текст до или после JSON. "
+                    "Опирайся на уже полученные результаты поиска."
+                )
+
+        if draft is not None:
             try:
-                return parse_user_answer(answer_text(final), allowed_sources, allowed_photos)
+                return answer_from_draft(draft, allowed_sources)
             except ValueError:
-                logger.warning("OpenRouter returned an invalid final answer format")
+                logger.warning("OpenRouter did not return a usable text draft")
 
         return UserAnswer(
-            message="Поиск по базе не удалось завершить. Уточните вопрос и попробуйте ещё раз."
+            message="Не удалось завершить подготовку ответа. Попробуйте отправить запрос ещё раз."
         )
 
     async def context_messages(self, conversation: ConversationContext) -> list[dict[str, str]]:

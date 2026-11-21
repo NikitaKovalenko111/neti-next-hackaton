@@ -47,7 +47,7 @@ async def test_agent_returns_answer_after_two_tool_rounds(settings, request_mess
         payload = json.loads(request.content)
         calls.append(payload)
         assert request.url.path == "/api/v1/chat/completions"
-        assert len(payload["tools"]) == 12
+        assert len(payload["tools"]) == 23
         if len(calls) == 1:
             return reply(
                 content="",
@@ -126,7 +126,7 @@ async def test_tool_budget_limits_calls_in_one_model_response(settings):
         if len(rounds) == 1:
             return reply(tool_calls=[tool_call("get_data_scope")] * (MAX_TOOL_CALLS + 1))
         assert payload["tool_choice"] == "none"
-        assert len(payload["tools"]) == 12
+        assert len(payload["tools"]) == 23
         assistant = payload["messages"][2]
         assert len(assistant["tool_calls"]) == MAX_TOOL_CALLS
         tool_results = payload["messages"][3:-1]
@@ -155,8 +155,90 @@ async def test_repeated_requests_for_tools_end_after_max_rounds(settings):
         agent = ToolCallingAgent(OpenRouterClient(client, settings), execute)
         answer = await agent.generate("system", "question")
 
-    assert "не удалось завершить" in answer.message
+    assert "Не удалось завершить" in answer.message
     assert execute.await_count == MAX_TOOL_ROUNDS
+
+
+async def test_passing_score_requires_lookup_and_retries_invalid_final_answer(settings):
+    source = "https://uust.ru/admission/scores/"
+    arguments = {
+        "metric": "passing_scores",
+        "codes": ["01.03.02"],
+        "branch_id": "ufa",
+        "year": 2026,
+        "funding": "budget",
+        "form": "очная",
+    }
+    execute = AsyncMock(
+        return_value={"status": "ok", "data": [{"passing_score": 231, "sources": [source]}]}
+    )
+    requests = []
+
+    def respond(request):
+        payload = json.loads(request.content)
+        requests.append(payload)
+        if len(requests) == 1:
+            assert payload["tool_choice"] == {
+                "type": "function",
+                "function": {"name": "get_admission_options"},
+            }
+            return reply(tool_calls=[tool_call("get_admission_options", **arguments)])
+        if len(requests) == 2:
+            return reply(content="Проходной балл — 231.")
+        assert payload["tool_choice"] == "none"
+        if len(requests) == 3:
+            return reply(content='{"message":')
+
+        assert any(msg["role"] == "tool" and "231" in msg["content"] for msg in payload["messages"])
+        content = json.dumps({"message": "Проходной балл — 231.", "source": [source]})
+        return reply(content=f"```json\n{content}\n```")
+
+    async with httpx.AsyncClient(
+        base_url=str(settings.openrouter_base_url),
+        transport=httpx.MockTransport(respond),
+    ) as client:
+        agent = ToolCallingAgent(OpenRouterClient(client, settings), execute)
+        answer = await agent.generate(
+            "system", "Какой был проходной балл на очный бюджет по 01.03.02 в Уфе в 2026 году?"
+        )
+
+    assert len(requests) == 4
+    assert answer.message == "Проходной балл — 231."
+    assert answer.source == [source]
+    execute.assert_awaited_once_with("get_admission_options", arguments)
+
+
+async def test_agent_uses_text_draft_when_model_returns_reasoning_instead_of_json(settings):
+    source = "https://uust.ru/programs/"
+    execute = AsyncMock(return_value={"status": "ok", "data": [{"sources": [source]}]})
+    requests = []
+
+    def respond(request):
+        payload = json.loads(request.content)
+        requests.append(payload)
+        if len(requests) == 1:
+            return reply(tool_calls=[tool_call("get_admission_options", metric="programs")])
+        if len(requests) == 2:
+            assert "reasoning" not in payload
+            return reply(content=f"Для начала попробуйте веб-разработку.\n\nИсточник: {source}")
+        assert payload["reasoning"] == {"enabled": False}
+        return reply(content="Thinking Process:\n1. Analyze the request.")
+
+    async with httpx.AsyncClient(
+        base_url=str(settings.openrouter_base_url),
+        transport=httpx.MockTransport(respond),
+    ) as client:
+        agent = ToolCallingAgent(OpenRouterClient(client, settings), execute)
+        answer = await agent.generate(
+            "system",
+            "Какие направления разработки можешь посоветовать?",
+            conversation=ConversationContext(history_summary="Пользователь интересуется УУНиТ."),
+        )
+
+    assert len(requests) == 4
+    assert answer.message == "Для начала попробуйте веб-разработку."
+    assert answer.source == [source]
+    execute.assert_awaited_once()
 
 
 async def test_conversation_context_and_annotation_cross_queue_boundary(settings, request_message):

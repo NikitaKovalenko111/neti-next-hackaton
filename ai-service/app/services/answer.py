@@ -56,6 +56,7 @@ _INTERNAL_FIELDS = {
 }
 # Links belong in source even if the provider repeats them in the prose.
 _LINK = re.compile(r"\[([^\]\n]+)\]\((https?://[^\s)]+)\)|https?://[^\s<>]+")
+_JSON_FENCE = re.compile(r"\A```(?:json)?\s*([\s\S]+?)\s*```\Z", re.IGNORECASE)
 
 
 def collect_source_urls(data: object) -> set[str]:
@@ -128,7 +129,35 @@ def collect_campus_photos(result: dict) -> dict[str, Attachment]:
 def parse_user_answer(
     content: str, allowed_sources: set[str], allowed_photos: dict[str, Attachment]
 ) -> UserAnswer:
-    answer = UserAnswer.model_validate_json(content.removesuffix("<|endoftext|>").rstrip())
+    content = content.removesuffix("<|endoftext|>").strip()
+    fenced = _JSON_FENCE.fullmatch(content)
+    answer = UserAnswer.model_validate_json(fenced[1] if fenced else content)
+    return sanitize_user_answer(answer, allowed_sources, allowed_photos)
+
+
+def answer_from_draft(content: str, allowed_sources: set[str]) -> UserAnswer:
+    content = content.removesuffix("<|endoftext|>").strip()
+    prefix = content.casefold()
+    if not prefix or prefix.startswith(
+        ("{", "[{", "```json", "<think", "<tool", "thinking process:", "процесс рассуждения:")
+    ):
+        raise ValueError("OpenRouter did not return a usable text draft")
+
+    return sanitize_user_answer(
+        UserAnswer(message=content),
+        allowed_sources,
+        {},
+        draft=True,
+    )
+
+
+def sanitize_user_answer(
+    answer: UserAnswer,
+    allowed_sources: set[str],
+    allowed_photos: dict[str, Attachment],
+    *,
+    draft: bool = False,
+) -> UserAnswer:
     cited = dict.fromkeys(url for url in answer.source if url in allowed_sources)
 
     def remove_citation(match: re.Match[str]) -> str:
@@ -138,6 +167,8 @@ def parse_user_answer(
             return ""
         if url in answer.source:
             return ""
+        if draft:
+            return match.group(1) or ""
         return match.group(0)
 
     message = _LINK.sub(remove_citation, answer.message)
