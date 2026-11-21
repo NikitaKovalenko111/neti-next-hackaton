@@ -37,9 +37,13 @@ class AgentRequest(BaseModel):
         return self
 
 
-class TextBlock(BaseModel):
-    type: Literal["text"] = "text"
+class UserAnswer(BaseModel):
     message: NonEmptyText
+    source: list[str] = Field(default_factory=list)
+
+
+class TextBlock(UserAnswer):
+    type: Literal["text"] = "text"
 
 
 class AgentResponse(BaseModel):

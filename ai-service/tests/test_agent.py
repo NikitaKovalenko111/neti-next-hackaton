@@ -13,7 +13,9 @@ async def test_response_matches_backend_blocks_contract(request_message):
 
     assert response.model_dump(mode="json") == {
         "request_message_id": str(request_message.message_id),
-        "blocks": [{"type": "text", "message": "Уточните, пожалуйста, название корпуса."}],
+        "blocks": [
+            {"type": "text", "message": "Уточните, пожалуйста, название корпуса.", "source": []}
+        ],
     }
     assert "используй инструменты" in model.generate.call_args.args[0]
 

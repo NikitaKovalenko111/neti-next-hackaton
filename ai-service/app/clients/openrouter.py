@@ -27,6 +27,7 @@ class OpenRouterClient:
         tools: list[dict] | None = None,
         *,
         tool_choice: str | None = None,
+        response_format: dict | None = None,
     ) -> dict:
         request = {
             "model": self.settings.openrouter_model,
@@ -39,6 +40,9 @@ class OpenRouterClient:
             request["tools"] = tools
         if tool_choice is not None:
             request["tool_choice"] = tool_choice
+
+        if response_format is not None:
+            request["response_format"] = response_format
 
         response = await self.client.post("chat/completions", json=request)
         response.raise_for_status()

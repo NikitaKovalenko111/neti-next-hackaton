@@ -7,7 +7,8 @@ import (
 )
 
 type TextBlock struct {
-	Message string `json:"message"`
+	Message string   `json:"message"`
+	Source  []string `json:"source,omitempty"`
 }
 
 type AttachmentsBlock struct {
