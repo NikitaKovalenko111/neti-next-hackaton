@@ -1,11 +1,13 @@
 import re
 from typing import get_args
 from urllib.parse import urlsplit
+from uuid import uuid4
 
-from app.models import Audience, MapPoint, UserAnswer
+from app.models import Attachment, Audience, MapPoint, UserAnswer
 
 ADMISSION_GUIDE = "https://uust.ru/admission/"
 STUDENT_SERVICES = "https://uust.ru/digital-services/"
+HISTORY_SUMMARY_LIMIT = 2400
 
 ANSWER_FORMAT = {
     "type": "json_schema",
@@ -19,17 +21,48 @@ ANSWER_FORMAT = {
                 "source": {"type": "array", "items": {"type": "string"}},
                 "audience": {"type": "string", "enum": list(get_args(Audience))},
                 "map_point": {"type": "string", "enum": list(get_args(MapPoint))},
+                "photo_ids": {"type": "array", "items": {"type": "string"}},
             },
-            "required": ["message", "source", "audience", "map_point"],
+            "required": ["message", "source", "audience", "map_point", "photo_ids"],
             "additionalProperties": False,
         },
     },
 }
 
+
+def answer_format_with_history() -> dict:
+    schema = ANSWER_FORMAT["json_schema"]["schema"]
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "university_answer_with_history",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    **schema["properties"],
+                    "history_summary": {"type": "string"},
+                },
+                "required": [*schema["required"], "history_summary"],
+                "additionalProperties": False,
+            },
+        },
+    }
+
+
 _SOURCE_FIELDS = {"source", "sources", "source_url"}
-_INTERNAL_FIELDS = {"verification", "checked_on", "checked_at", "similarity"}
+_INTERNAL_FIELDS = {
+    "verification",
+    "checked_on",
+    "checked_at",
+    "similarity",
+    "minio_bucket",
+    "object_key",
+    "content_type",
+}
 # Links belong in source even if the provider repeats them in the prose.
 _LINK = re.compile(r"\[([^\]\n]+)\]\((https?://[^\s)]+)\)|https?://[^\s<>]+")
+_JSON_FENCE = re.compile(r"\A```(?:json)?\s*([\s\S]+?)\s*```\Z", re.IGNORECASE)
 
 
 def collect_source_urls(data: object) -> set[str]:
@@ -68,8 +101,69 @@ def model_tool_data(data: object) -> object:
     return data
 
 
-def parse_user_answer(content: str, allowed_sources: set[str]) -> UserAnswer:
-    answer = UserAnswer.model_validate_json(content.removesuffix("<|endoftext|>").rstrip())
+def collect_campus_photos(result: dict) -> dict[str, Attachment]:
+    if result.get("status") != "ok" or not isinstance(result.get("data"), list):
+        return {}
+
+    photos = {}
+    for row in result["data"]:
+        if not isinstance(row, dict):
+            continue
+        photo_id = row.get("id")
+        key = row.get("object_key")
+        bucket = row.get("minio_bucket")
+        if (
+            row.get("photo_available") is True
+            and isinstance(photo_id, str)
+            and re.fullmatch(r"[a-z0-9-]+", photo_id)
+            and isinstance(key, str)
+            and key.startswith("campus/")
+            and isinstance(bucket, str)
+            and bucket
+            and row.get("content_type") == "image/jpeg"
+        ):
+            photos[photo_id] = Attachment(
+                attachment_id=uuid4(),
+                bucket=bucket,
+                object_key=key,
+                filename=f"{photo_id}.jpg",
+                content_type="image/jpeg",
+            )
+    return photos
+
+
+def parse_user_answer(
+    content: str, allowed_sources: set[str], allowed_photos: dict[str, Attachment]
+) -> UserAnswer:
+    content = content.removesuffix("<|endoftext|>").strip()
+    fenced = _JSON_FENCE.fullmatch(content)
+    answer = UserAnswer.model_validate_json(fenced[1] if fenced else content)
+    return sanitize_user_answer(answer, allowed_sources, allowed_photos)
+
+
+def answer_from_draft(content: str, allowed_sources: set[str]) -> UserAnswer:
+    content = content.removesuffix("<|endoftext|>").strip()
+    prefix = content.casefold()
+    if not prefix or prefix.startswith(
+        ("{", "[{", "```json", "<think", "<tool", "thinking process:", "процесс рассуждения:")
+    ):
+        raise ValueError("OpenRouter did not return a usable text draft")
+
+    return sanitize_user_answer(
+        UserAnswer(message=content),
+        allowed_sources,
+        {},
+        draft=True,
+    )
+
+
+def sanitize_user_answer(
+    answer: UserAnswer,
+    allowed_sources: set[str],
+    allowed_photos: dict[str, Attachment],
+    *,
+    draft: bool = False,
+) -> UserAnswer:
     cited = dict.fromkeys(url for url in answer.source if url in allowed_sources)
 
     def remove_citation(match: re.Match[str]) -> str:
@@ -79,11 +173,18 @@ def parse_user_answer(content: str, allowed_sources: set[str]) -> UserAnswer:
             return ""
         if url in answer.source:
             return ""
+        if draft:
+            return match.group(1) or ""
         return match.group(0)
 
     message = _LINK.sub(remove_citation, answer.message)
     message = re.sub(r"(?im)^[ \t]*(?:источники?|sources?)[ \t]*:[ \t]*$", "", message)
     message = re.sub(r"\s*\((?:status|verification)\s*:\s*[a-z]+(?:_[a-z]+)+\)", "", message)
     return UserAnswer(
-        message=message, source=list(cited), audience=answer.audience, map_point=answer.map_point
+        message=message,
+        source=list(cited),
+        audience=answer.audience,
+        map_point=answer.map_point,
+        photos=[allowed_photos[i] for i in dict.fromkeys(answer.photo_ids) if i in allowed_photos],
+        history_summary=answer.history_summary.strip()[:HISTORY_SUMMARY_LIMIT],
     )

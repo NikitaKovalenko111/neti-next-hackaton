@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     rag_postgres_user: str = "rag_app"
     rag_postgres_password: SecretStr = SecretStr("rag_app")
 
+    minio_endpoint: str = "localhost:9000"
+    minio_access_key: SecretStr = SecretStr("minioadmin")
+    minio_secret_key: SecretStr = SecretStr("minioadmin")
+    minio_bucket: str = "images"
+    minio_region: str = "us-east-1"
+    minio_secure: bool = False
+
     openrouter_api_key: SecretStr = SecretStr("")
     openrouter_base_url: HttpUrl = HttpUrl("https://openrouter.ai/api/v1/")
     openrouter_model: str = Field(default="qwen/qwen3-30b-a3b-instruct-2507", min_length=1)

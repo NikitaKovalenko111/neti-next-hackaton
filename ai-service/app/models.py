@@ -21,6 +21,17 @@ class DialogueTurn(BaseModel):
     message: NonEmptyText
 
 
+class ConversationTurn(BaseModel):
+    user_message: str
+    assistant_message: str = ""
+
+
+class ConversationContext(BaseModel):
+    history_summary: str = ""
+    recent_turns: list[ConversationTurn] = Field(default_factory=list, max_length=5)
+    older_turns: list[ConversationTurn] = Field(default_factory=list)
+
+
 class AgentRequest(BaseModel):
     message_id: UUID
     chat_id: UUID
@@ -28,6 +39,7 @@ class AgentRequest(BaseModel):
     message: str = ""
     attachments: list[Attachment] = Field(default_factory=list)
     history: list[DialogueTurn] = Field(default_factory=list, max_length=8)
+    conversation: ConversationContext | None = None
 
     @field_validator("message_id", "chat_id", "user_id")
     @classmethod
@@ -45,18 +57,21 @@ class AgentRequest(BaseModel):
         return self
 
 
-class UserAnswer(BaseModel):
+class AnswerText(BaseModel):
     message: NonEmptyText
     source: list[str] = Field(default_factory=list)
     audience: Audience = "unknown"
+
+
+class UserAnswer(AnswerText):
     map_point: MapPoint = "none"
+    history_summary: str = ""
+    photo_ids: list[str] = Field(default_factory=list)
+    photos: list[Attachment] = Field(default_factory=list)
 
 
-class TextBlock(BaseModel):
+class TextBlock(AnswerText):
     type: Literal["text"] = "text"
-    message: NonEmptyText
-    source: list[str] = Field(default_factory=list)
-    audience: Audience = "unknown"
 
 
 class MapBlock(BaseModel):
@@ -67,6 +82,12 @@ class MapBlock(BaseModel):
     address: NonEmptyText
 
 
+class AttachmentsBlock(BaseModel):
+    type: Literal["attachments"] = "attachments"
+    attachments: list[Attachment] = Field(min_length=1)
+
+
 class AgentResponse(BaseModel):
     request_message_id: UUID
-    blocks: list[TextBlock | MapBlock] = Field(min_length=1)
+    blocks: list[TextBlock | AttachmentsBlock | MapBlock] = Field(min_length=1)
+    history_summary: str | None = None

@@ -132,7 +132,11 @@ async def list_photos(
 ) -> list[dict]:
     rows = await connection.fetch(
         """
-        SELECT ph.payload - 'source_ids' || jsonb_build_object(
+        SELECT (ph.payload - 'source_ids' - 'url') || jsonb_build_object(
+            'photo_available', ph.object_key IS NOT NULL,
+            'minio_bucket', ph.minio_bucket,
+            'object_key', ph.object_key,
+            'content_type', ph.content_type,
             'sources', ARRAY(SELECT to_jsonb(s) FROM rag.campus_sources s
                              WHERE ph.payload->'source_ids' ? s.id ORDER BY s.id)
         ) AS data
@@ -158,9 +162,9 @@ async def get_data_scope(connection: asyncpg.Connection) -> dict:
         "campus": json.loads(row["campus"]) if row["campus"] is not None else None,
         "material_support_as_of": row["support_as_of"],
         "topics_not_covered": [
-            "Текущее количество свободных мест, стоимость и графики заселения",
+            "Свободные места в общежитиях в реальном времени и тарифы для всех общежитий",
             "Расписание занятий, номера аудиторий и маршруты внутри зданий",
-            "GPS-координаты, доступность входов и транспорт в реальном времени",
+            "Доступность конкретного входа сейчас и транспорт в реальном времени",
             "Персональный статус заявления и назначенная конкретному студенту выплата",
         ],
     }

@@ -23,6 +23,20 @@ services:
     build:
       context: .
 
+  minio:
+    extends:
+      file: ../docker-compose.yml
+      service: minio
+    build:
+      context: ../deploy/minio
+
+  campus-photos:
+    extends:
+      file: ../docker-compose.yml
+      service: campus-photos
+    build:
+      context: .
+
   ai-service:
     extends:
       file: ../docker-compose.yml
@@ -33,3 +47,4 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
+  minio_data:

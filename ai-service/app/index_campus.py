@@ -11,6 +11,7 @@ from app.config import Settings
 from app.embeddings import BATCH_SIZE, embed
 from app.material_support import find_ground, index_material_support, search_material_support
 from app.storage import connect_rag, migrate
+from app.university_knowledge import index_knowledge
 
 logger = logging.getLogger(__name__)
 
@@ -112,10 +113,15 @@ async def main(args: argparse.Namespace) -> None:
             try:
                 count = await index_campus(connection, client, model)
                 grounds = await index_material_support(connection, client, model)
+                notes = await index_knowledge(connection, client, model)
             finally:
                 await connection.execute("SELECT pg_advisory_unlock(781234911)")
             logger.info(
-                "Indexed %d campus documents and %d support grounds with %s", count, grounds, model
+                "Indexed %d campus documents, %d support grounds and %d university notes with %s",
+                count,
+                grounds,
+                notes,
+                model,
             )
 
 

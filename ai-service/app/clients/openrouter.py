@@ -31,8 +31,9 @@ class OpenRouterClient:
         messages: list[dict],
         tools: list[dict] | None = None,
         *,
-        tool_choice: str | None = None,
+        tool_choice: str | dict | None = None,
         response_format: dict | None = None,
+        reasoning: bool | None = None,
     ) -> dict:
         ollama = self.settings.ollama_base_url is not None
         request: dict = {
@@ -49,11 +50,13 @@ class OpenRouterClient:
                 request.update(temperature=0.2, reasoning={"enabled": False})
         if tools and not (ollama and tool_choice == "none"):
             request["tools"] = tools
-        if tool_choice is not None and not ollama:
+        if tool_choice is not None and not (ollama and tool_choice == "none"):
             request["tool_choice"] = tool_choice
 
         if response_format is not None:
             request["response_format"] = response_format
+        if reasoning is not None and not ollama:
+            request["reasoning"] = {"enabled": reasoning}
 
         response = await self.client.post("chat/completions", json=request)
         response.raise_for_status()

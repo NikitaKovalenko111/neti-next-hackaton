@@ -158,6 +158,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	source := "https://uust.ru/reception/pass-application/"
 	reply := models.AgentResponse{
 		RequestMessageID: accepted.MessageID,
+		HistorySummary:   "Original summary",
 		Blocks: []models.Block{
 			{Text: &models.TextBlock{Message: "Answer", Audience: "student", Source: []string{source}}},
 			{Attachments: &models.AttachmentsBlock{Attachments: []models.AgentAttachment{{
@@ -201,6 +202,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		}
 		// A redelivery must use the saved blocks, even if the new payload changed.
 		reply.Blocks[0].Text.Message = "Changed answer"
+		reply.HistorySummary = "Changed summary"
 	}
 
 	messages, err := history.History(ctx, accepted.ChatID.String(), userID, "")
@@ -238,37 +240,122 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		t.Fatalf("cursor: %+v %v", messages, err)
 	}
 
-	followUp, err := request.Create(ctx, requestservice.Input{
-		UserID: userID, ChatID: accepted.ChatID.String(), Message: "Follow-up",
-	})
+	var followups []uuid.UUID
+	for i := 0; i < 7; i++ {
+		var followupBody bytes.Buffer
+		form := multipart.NewWriter(&followupBody)
+		_ = form.WriteField("user_id", userID)
+		_ = form.WriteField("chat_id", accepted.ChatID.String())
+		_ = form.WriteField("message", fmt.Sprintf("Followup %d", i))
+		if err := form.Close(); err != nil {
+			t.Fatal(err)
+		}
+		followupResponse, err := http.Post(server.URL+"/request", form.FormDataContentType(), &followupBody)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var next struct {
+			ChatID    uuid.UUID `json:"chat_id"`
+			MessageID uuid.UUID `json:"message_id"`
+		}
+		err = json.NewDecoder(followupResponse.Body).Decode(&next)
+		followupResponse.Body.Close()
+		if err != nil || followupResponse.StatusCode != http.StatusAccepted || next.ChatID != accepted.ChatID {
+			t.Fatalf("HTTP followup did not continue the chat: %+v (%v)", next, err)
+		}
+		followups = append(followups, next.MessageID)
+	}
+	if err := agent.Dispatch(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	var firstFollowup, lastFollowup models.AgentRequest
+	for _, item := range publisher.tasks {
+		if item.MessageID == followups[0] {
+			if err := json.Unmarshal(item.Payload, &firstFollowup); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if item.MessageID == followups[6] {
+			if err := json.Unmarshal(item.Payload, &lastFollowup); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	snapshot := firstFollowup.Conversation
+	if snapshot == nil || snapshot.HistorySummary != "Original summary" ||
+		len(snapshot.RecentTurns) != 1 || snapshot.RecentTurns[0].AssistantMessage != "Answer\nFinal paragraph" {
+		t.Fatalf("unexpected first followup context: %+v", snapshot)
+	}
+	snapshot = lastFollowup.Conversation
+	if snapshot == nil || len(snapshot.RecentTurns) != 5 || len(snapshot.OlderTurns) != 1 ||
+		snapshot.RecentTurns[0].UserMessage != "Followup 1" ||
+		snapshot.OlderTurns[0].UserMessage != "Followup 0" {
+		t.Fatalf("unexpected last followup context: %+v", snapshot)
+	}
+
+	campusKey := "campus/ishimbay-photo.jpg"
+	reply.Blocks = []models.Block{
+		{Text: &models.TextBlock{Message: "Followup answer"}},
+		{Attachments: &models.AttachmentsBlock{Attachments: []models.AgentAttachment{
+			{ID: uuid.New(), Bucket: "images", ObjectKey: campusKey, Filename: "ishimbay.jpg", ContentType: "image/jpeg"},
+		}}},
+	}
+	reply.RequestMessageID = followups[6]
+	reply.HistorySummary = "Newer summary"
+	if err := agent.HandleResponse(ctx, reply); err != nil {
+		t.Fatal(err)
+	}
+	reply.Blocks[1].Attachments.Attachments[0].ID = uuid.New()
+	reply.RequestMessageID = followups[5]
+	reply.HistorySummary = "Stale summary"
+	if err := agent.HandleResponse(ctx, reply); err != nil {
+		t.Fatal(err)
+	}
+
+	var summary string
+	if err := db.QueryRow(ctx, `SELECT history_summary FROM chats WHERE id = $1`, accepted.ChatID).Scan(&summary); err != nil || summary != "Newer summary" {
+		t.Fatalf("unexpected saved annotation: %q (%v)", summary, err)
+	}
+
+	for i := 0; i < 2; i++ {
+		var event models.ResponseEvent
+		if err := ws.ReadJSON(&event); err != nil {
+			t.Fatal(err)
+		}
+		photo := event.Blocks[1].Attachments.Attachments[0]
+		if photo.ObjectKey != campusKey || !strings.Contains(photo.URL, "?signature=") {
+			t.Fatalf("campus photo URL not signed: %+v", photo)
+		}
+	}
+
+	messages, err = history.History(ctx, accepted.ChatID.String(), userID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, entry := range messages[len(messages)-2:] {
+		photo := entry.Blocks[1].Attachments.Attachments[0]
+		if photo.ObjectKey != campusKey || photo.URL == "" {
+			t.Fatalf("shared campus photo missing in history: %+v", photo)
+		}
+	}
+
 	newChat, err := request.Create(ctx, requestservice.Input{UserID: userID, Message: "New chat"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := agent.Dispatch(ctx); err != nil || len(publisher.tasks) != 3 {
-		t.Fatalf("dispatch after follow-up: %d tasks, %v", len(publisher.tasks), err)
+	if err := agent.Dispatch(ctx); err != nil {
+		t.Fatal(err)
 	}
-	for _, published := range publisher.tasks[1:] {
-		var next models.AgentRequest
-		if err := json.Unmarshal(published.Payload, &next); err != nil {
-			t.Fatal(err)
-		}
-		switch next.MessageID {
-		case followUp.MessageID:
-			if len(next.History) != 2 ||
-				next.History[0] != (models.DialogueTurn{Role: "user", Message: "Question"}) ||
-				next.History[1] != (models.DialogueTurn{Role: "assistant", Message: "Answer\nFinal paragraph"}) {
-				t.Fatalf("unexpected follow-up context: %+v", next.History)
-			}
-		case newChat.MessageID:
-			if len(next.History) != 0 {
-				t.Fatalf("new chat inherited previous context: %+v", next.History)
-			}
-		default:
-			t.Fatalf("unexpected task: %s", next.MessageID)
-		}
+	lastTask := publisher.tasks[len(publisher.tasks)-1]
+	if lastTask.MessageID != newChat.MessageID {
+		t.Fatalf("new chat task missing: %s", newChat.MessageID)
+	}
+	var newRequest models.AgentRequest
+	if err := json.Unmarshal(lastTask.Payload, &newRequest); err != nil {
+		t.Fatal(err)
+	}
+	if c := newRequest.Conversation; c != nil && (c.HistorySummary != "" || len(c.RecentTurns)+len(c.OlderTurns) != 0) {
+		t.Fatalf("new chat inherited previous context: %+v", c)
 	}
 }

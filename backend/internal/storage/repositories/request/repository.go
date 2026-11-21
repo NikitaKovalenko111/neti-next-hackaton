@@ -18,6 +18,9 @@ type Repository struct{ db *pgxpool.Pool }
 
 func New(db *pgxpool.Pool) *Repository { return &Repository{db: db} }
 
+const recentTurnLimit = 5
+const contextMessageLimit = 2500
+
 func (r *Repository) Save(ctx context.Context, record service.Record) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -25,14 +28,15 @@ func (r *Repository) Save(ctx context.Context, record service.Record) error {
 	}
 	defer tx.Rollback(context.Background())
 
+	var summary string
+	var summarizedThrough int64
 	if record.NewChat {
 		_, err = tx.Exec(ctx, `INSERT INTO chats (id, user_id) VALUES ($1, $2)`, record.Result.ChatID, record.UserID)
 	} else {
-		var id uuid.UUID
 		err = tx.QueryRow(ctx,
-			`SELECT id FROM chats WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+			`SELECT history_summary, history_summary_through FROM chats WHERE id = $1 AND user_id = $2 FOR NO KEY UPDATE`,
 			record.Result.ChatID, record.UserID,
-		).Scan(&id)
+		).Scan(&summary, &summarizedThrough)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return service.ErrChatNotFound
 		}
@@ -42,42 +46,19 @@ func (r *Repository) Save(ctx context.Context, record service.Record) error {
 		return fmt.Errorf("save chat: %w", err)
 	}
 
-	if !record.NewChat {
-		rows, err := tx.Query(ctx, `
-			SELECT role, left(btrim(body), 500) AS message
-			FROM (
-				SELECT role, created_at, id, COALESCE((
-					SELECT string_agg(part->>'message', chr(10) ORDER BY block_index)
-					FROM jsonb_array_elements(blocks) WITH ORDINALITY AS parts(part, block_index)
-					WHERE part->>'type' = 'text'
-				), content) AS body
-				FROM messages WHERE chat_id = $1
-				ORDER BY created_at DESC, id DESC LIMIT 8
-			) AS recent
-			WHERE btrim(body) <> ''
-			ORDER BY created_at, id`, record.Result.ChatID)
-		if err != nil {
-			return fmt.Errorf("load conversation for agent: %w", err)
-		}
-		record.Task.History, err = pgx.CollectRows(rows, pgx.RowToStructByName[models.DialogueTurn])
-		if err != nil {
-			return fmt.Errorf("read conversation for agent: %w", err)
-		}
-	}
-	task, err := json.Marshal(record.Task)
-	if err != nil {
-		return fmt.Errorf("encode agent request: %w", err)
-	}
-
 	blocks, err := json.Marshal(record.Blocks)
 	if err != nil {
 		return err
 	}
 
-	_, err = tx.Exec(ctx,
-		`INSERT INTO messages (id, chat_id, content, blocks) VALUES ($1, $2, $3, $4)`,
+	var turnNumber int64
+	err = tx.QueryRow(ctx, `
+		INSERT INTO messages (id, chat_id, content, blocks, turn_number)
+		SELECT $1, $2, $3, $4, COALESCE(MAX(turn_number), 0) + 1
+		FROM messages WHERE chat_id = $2 AND role = 'user'
+		RETURNING turn_number`,
 		record.Result.MessageID, record.Result.ChatID, record.Message, blocks,
-	)
+	).Scan(&turnNumber)
 	if err != nil {
 		return fmt.Errorf("save message: %w", err)
 	}
@@ -94,9 +75,19 @@ func (r *Repository) Save(ctx context.Context, record service.Record) error {
 		}
 	}
 
+	task := record.Task
+	task.Conversation, err = loadConversation(ctx, tx, record.Result.ChatID, turnNumber, summary, summarizedThrough)
+	if err != nil {
+		return fmt.Errorf("load conversation context: %w", err)
+	}
+	payload, err := json.Marshal(task)
+	if err != nil {
+		return fmt.Errorf("encode agent task: %w", err)
+	}
+
 	_, err = tx.Exec(ctx,
 		`INSERT INTO agent_request_outbox (message_id, payload) VALUES ($1, $2)`,
-		record.Result.MessageID, task,
+		record.Result.MessageID, payload,
 	)
 	if err != nil {
 		return fmt.Errorf("save agent task: %w", err)
@@ -107,4 +98,48 @@ func (r *Repository) Save(ctx context.Context, record service.Record) error {
 	}
 
 	return nil
+}
+
+func loadConversation(
+	ctx context.Context, tx pgx.Tx, chatID uuid.UUID, turnNumber int64, summary string, summarizedThrough int64,
+) (*models.ConversationContext, error) {
+	conversation := &models.ConversationContext{HistorySummary: summary}
+	firstRecent := turnNumber - recentTurnLimit
+	rows, err := tx.Query(ctx, `
+		SELECT u.turn_number,
+		       left(concat_ws(E'\n', nullif(u.content, ''), files.names), $4),
+		       left(coalesce(reply.text, ''), $4)
+		FROM messages u
+		LEFT JOIN messages a ON a.request_message_id = u.id AND a.role = 'assistant'
+		LEFT JOIN LATERAL (
+		    SELECT 'Прикреплённые файлы: ' || string_agg(f.filename, ', ' ORDER BY f.attachment_id) AS names
+		    FROM attachments f WHERE f.message_id = u.id
+		) files ON true
+		LEFT JOIN LATERAL (
+		    SELECT string_agg(block.value->>'message', E'\n' ORDER BY block.position) AS text
+		    FROM jsonb_array_elements(a.blocks) WITH ORDINALITY AS block(value, position)
+		    WHERE block.value->>'type' = 'text'
+		) reply ON true
+		WHERE u.chat_id = $1 AND u.role = 'user'
+		  AND u.turn_number < $2 AND u.turn_number >= $3
+		ORDER BY u.turn_number`,
+		chatID, turnNumber, min(firstRecent, summarizedThrough+1), contextMessageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var number int64
+		var turn models.ConversationTurn
+		if err := rows.Scan(&number, &turn.UserMessage, &turn.AssistantMessage); err != nil {
+			return nil, err
+		}
+		if number >= firstRecent {
+			conversation.RecentTurns = append(conversation.RecentTurns, turn)
+		} else {
+			conversation.OlderTurns = append(conversation.OlderTurns, turn)
+		}
+	}
+	return conversation, rows.Err()
 }
