@@ -1,66 +1,123 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import campusOrbit from '../../assets/campus-orbit.webp'
+import { accountSessionKey, currentAccount, type Account } from '../../api/account'
+import type { ChatMessage } from '../../api/messageBlocks'
+import { AccountDialog } from '../../components/assistant/AccountDialog'
 import { AssistantIcon, AssistantMark } from '../../components/assistant/AssistantIcon'
-import { IdleSnow } from '../../components/assistant/IdleSnow'
+import { CampusArt } from '../../components/assistant/CampusArt'
+import { FavoritesDialog } from '../../components/assistant/FavoritesDialog'
+import { IdleSeason } from '../../components/assistant/IdleSeason'
 import { MessageBubble } from '../../components/assistant/MessageBubble'
 import { ProjectHeader, universityUrl } from '../../components/project-header/ProjectHeader'
-import { UniversityMark } from '../../components/project-header/UniversityMark'
 import {
   assistantActions,
   requestAnswer,
-  type Audience,
 } from '../../redux/assistantSlice'
 import type { AppDispatch, RootState } from '../../redux/store'
+import { canSaveFavorite, favoritesStorageKey, loadFavorites, snapshotFavorite, writeFavorites } from './favorites'
 
-const prompts = {
-  applicant: [
-    { label: 'Поступление', question: 'Что нужно для поступления на бакалавриат?', icon: 'cap' },
-    { label: 'Направления', question: 'Какие ИТ-направления есть в УУНиТ?', icon: 'blocks' },
-    { label: 'Общежитие', question: 'Как получить место в общежитии?', icon: 'home' },
-  ],
-  student: [
-    { label: 'Учебный план', question: 'Где найти учебный план моей программы?', icon: 'book' },
-    { label: 'Цифровые сервисы', question: 'Какие сервисы доступны студентам?', icon: 'blocks' },
-    { label: 'Поддержка', question: 'Куда обратиться по вопросу обучения?', icon: 'chat' },
-  ],
-} as const
+const prompts = [
+  { label: 'Поступление', question: 'Что нужно для поступления на бакалавриат?', icon: 'cap' },
+  { label: 'Учебный план', question: 'Где найти учебный план моей программы?', icon: 'book' },
+  { label: 'Как добраться', question: 'Как добраться до главного корпуса УУНиТ?', icon: 'pin' },
+] as const
 
-const audiences = [
-  { id: 'applicant', label: 'Я абитуриент', icon: 'cap' },
-  { id: 'student', label: 'Я студент', icon: 'book' },
-] as const satisfies ReadonlyArray<{ id: Audience; label: string; icon: 'cap' | 'book' }>
+const audienceLabels = {
+  unknown: 'Профиль уточняется',
+  applicant: 'Абитуриент',
+  student: 'Студент',
+}
 
 export function AssistantPage() {
   const dispatch = useDispatch<AppDispatch>()
-  const { audience, messages, sessionId, status, error } = useSelector(
+  const { account, messages, sessionId, status, error, pendingMessageId } = useSelector(
     (state: RootState) => state.assistant,
   )
+  const storageKey = favoritesStorageKey(account?.id)
   const [draft, setDraft] = useState('')
+  const [savedFavorites, setSavedFavorites] = useState(() => ({ key: storageKey, messages: loadFavorites(storageKey) }))
+  const [favoriteError, setFavoriteError] = useState(false)
+  const [accountOpen, setAccountOpen] = useState(false)
   const transcriptRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
+  const favoritesDialogRef = useRef<HTMLDialogElement>(null)
+  const accountDialogRef = useRef<HTMLDialogElement>(null)
+  const favorites = savedFavorites.key === storageKey ? savedFavorites.messages : []
+  const favoriteIds = new Set(favorites.map(({ id }) => id))
   const hasMessages = messages.length > 0
   const isLoading = status === 'loading'
+  const canSend = !isLoading && pendingMessageId === null
+  const audience = messages.findLast((message) => message.role === 'assistant')
+    ?.blocks.find((block) => block.type === 'text')?.audience ?? 'unknown'
 
   useEffect(() => {
     const transcript = transcriptRef.current
     if (transcript) transcript.scrollTop = transcript.scrollHeight
   }, [messages.length, status])
 
+  const changeAccount = useCallback((current: Account | null) => {
+    dispatch(assistantActions.accountChanged({ account: current, sessionId: crypto.randomUUID() }))
+    const key = favoritesStorageKey(current?.id)
+    setSavedFavorites({ key, messages: loadFavorites(key) })
+    setFavoriteError(false)
+    setDraft('')
+  }, [dispatch])
+
+  useEffect(() => {
+    function syncStorage(event: StorageEvent) {
+      if (event.key === accountSessionKey || event.key === null) {
+        changeAccount(currentAccount())
+      } else if (event.key === storageKey) {
+        setSavedFavorites({ key: storageKey, messages: loadFavorites(storageKey) })
+      }
+    }
+    window.addEventListener('storage', syncStorage)
+    return () => window.removeEventListener('storage', syncStorage)
+  }, [changeAccount, storageKey])
+
+  useEffect(() => {
+    if (!account) return
+    const timer = window.setTimeout(() => changeAccount(currentAccount()), Math.max(0, account.expiresAt - Date.now()))
+    return () => window.clearTimeout(timer)
+  }, [account, changeAccount])
+
+  function changeFavorite(message: ChatMessage, shouldSave: boolean) {
+    const others = loadFavorites(storageKey).filter(({ id }) => id !== message.id)
+    const updated = shouldSave ? [snapshotFavorite(message), ...others] : others
+
+    try {
+      writeFavorites(updated, storageKey)
+      setSavedFavorites({ key: storageKey, messages: updated })
+      setFavoriteError(false)
+      return true
+    } catch {
+      setFavoriteError(true)
+      return false
+    }
+  }
+
+  function focusComposerOnDesktop() {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      composerRef.current?.blur()
+    } else {
+      composerRef.current?.focus({ preventScroll: true })
+    }
+  }
+
   function submitPrompt(value: string) {
     const content = value.trim()
-    if (!content || isLoading) return
+    if (!content || !canSend) return
 
     dispatch(
       assistantActions.addUserMessage({
         id: crypto.randomUUID(),
         role: 'user',
-        content,
+        blocks: [{ type: 'text', message: content }],
       }),
     )
     dispatch(requestAnswer(sessionId))
     setDraft('')
-    composerRef.current?.focus({ preventScroll: true })
+    focusComposerOnDesktop()
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -78,69 +135,29 @@ export function AssistantPage() {
   function startNewSession() {
     dispatch(assistantActions.startNewSession(crypto.randomUUID()))
     setDraft('')
-    composerRef.current?.focus({ preventScroll: true })
+    focusComposerOnDesktop()
+  }
+
+  function restoreChat(owner: string, chatId: string, messages: ChatMessage[]) {
+    const sessionId = crypto.randomUUID()
+    dispatch(assistantActions.restoreChat({ accountId: owner, sessionId, chatId, messages }))
+    if (messages.at(-1)?.role === 'user') dispatch(requestAnswer(sessionId))
+    setDraft('')
   }
 
   return (
-    <div className={hasMessages ? 'assistant-app has-messages' : 'assistant-app'}>
-      <aside className="assistant-sidebar" aria-label="Навигация помощника">
-        <div className="sidebar-content">
-          <a
-            aria-label="Уфимский университет науки и технологий — официальный сайт"
-            className="brand"
-            href={universityUrl}
-            rel="noreferrer"
-            target="_blank"
-          >
-            <UniversityMark className="brand-symbol" />
-            <span className="brand-name">
-              Уфимский<br />университет<br />науки и технологий
-            </span>
-          </a>
-
-          <button className="new-chat-button" onClick={startNewSession} type="button">
-            <AssistantIcon name="plus" />
-            <span>Новый диалог</span>
-          </button>
-
-          <div className="sidebar-section">
-            <p className="section-label" id="audience-label">Ваш профиль</p>
-            <div className="audience-switch" role="group" aria-labelledby="audience-label">
-              {audiences.map((option) => (
-                <button
-                  aria-pressed={audience === option.id}
-                  className="audience-option"
-                  key={option.id}
-                  onClick={() => dispatch(assistantActions.setAudience(option.id))}
-                  type="button"
-                >
-                  <AssistantIcon name={option.icon} />
-                  {option.label}
-                </button>
-              ))}
-              <UniversityMark className="audience-watermark" />
-            </div>
-          </div>
-
-          <div className="sidebar-bottom">
-            <nav aria-label="Ссылки УУНиТ">
-              <p className="section-label">Полезные ссылки</p>
-              <a href={universityUrl + 'admission/'} target="_blank" rel="noreferrer">
-                <AssistantIcon name="cap" />
-                Приёмная комиссия
-              </a>
-              <a href={universityUrl + 'digital-services/'} target="_blank" rel="noreferrer">
-                <AssistantIcon name="blocks" />
-                Сервисы УУНиТ
-              </a>
-            </nav>
-          </div>
-        </div>
-      </aside>
-
-      <main className="assistant-main">
-        <ProjectHeader />
-
+    <div className="assistant-app">
+      <ProjectHeader
+        profileLabel={audienceLabels[audience]}
+        signedIn={Boolean(account)}
+        onNewChat={startNewSession}
+        onOpenFavorites={() => favoritesDialogRef.current?.showModal()}
+        onOpenAccount={() => {
+          accountDialogRef.current?.showModal()
+          setAccountOpen(true)
+        }}
+      />
+      <main className={hasMessages ? 'assistant-main' : 'assistant-main assistant-main--welcome'}>
         <div
           className="assistant-content"
           key={hasMessages ? 'conversation' : 'welcome'}
@@ -153,7 +170,11 @@ export function AssistantPage() {
                   key={message.id}
                   message={message}
                   onFollowUp={submitPrompt}
-                  isLoading={isLoading}
+                  isLoading={!canSend}
+                  isFavorite={favoriteIds.has(message.id)}
+                  onToggleFavorite={canSaveFavorite(message)
+                    ? () => { changeFavorite(message, !favoriteIds.has(message.id)) }
+                    : undefined}
                 />
               ))}
               {isLoading && (
@@ -166,38 +187,18 @@ export function AssistantPage() {
           ) : (
             <div className="welcome-panel content-width">
               <section className="welcome-hero" aria-labelledby="welcome-title">
-                <img className="welcome-art" src={campusOrbit} alt="" fetchPriority="high" />
                 <div className="welcome-copy">
-                  <p className="welcome-eyebrow">Think-About-It-Agent</p>
-                  <h1 id="welcome-title">Спросите<br />про <span>УУНиТ</span></h1>
-                  <p className="welcome-description">
-                    Помогу разобраться в поступлении, учёбе и студенческой жизни.
-                  </p>
+                  <h1 id="welcome-title">Спросите<br />про УУНиТ</h1>
+                  <p className="welcome-description">Поступление, учёба<br />и студенческая жизнь</p>
                 </div>
-              </section>
-
-              <section className="suggestions" aria-labelledby="suggestions-title">
-                <h2 id="suggestions-title">С чего начать</h2>
-                <div className="prompt-grid">
-                  {prompts[audience].map(({ label, question, icon }) => (
-                    <button
-                      className="prompt-card"
-                      key={label}
-                      onClick={() => submitPrompt(question)}
-                      type="button"
-                    >
-                      <span className="prompt-icon"><AssistantIcon name={icon} /></span>
-                      <strong>{label}</strong>
-                      <span className="prompt-question">{question}</span>
-                    </button>
-                  ))}
-                </div>
+                <CampusArt />
               </section>
             </div>
           )}
         </div>
 
         <div className="composer-area content-width">
+          {favoriteError && <p className="favorite-error" role="alert">Не удалось обновить избранное.</p>}
           {error && (
             <div className="request-error" role="alert">
               <span>{error}</span>
@@ -210,29 +211,49 @@ export function AssistantPage() {
             <textarea
               ref={composerRef}
               aria-label="Ваш вопрос"
-              aria-describedby="composer-hint"
+              enterKeyHint="send"
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Задайте вопрос об УУНиТ"
               rows={1}
               value={draft}
             />
-            <div className="composer-bottom">
-              <span id="composer-hint"><kbd>Enter</kbd> отправить · <kbd>Shift + Enter</kbd> новая строка</span>
-              <button
-                className="send-button"
-                disabled={!draft.trim() || isLoading}
-                type="submit"
-              >
-                Отправить
-                <AssistantIcon name="send" />
-              </button>
-            </div>
+            <button aria-label="Отправить" className="send-button" disabled={!draft.trim() || !canSend} type="submit">
+              <span>Отправить</span>
+              <AssistantIcon name="send" />
+            </button>
           </form>
-          <p className="composer-note"><AssistantIcon name="link" /> Ссылки на источники появятся под ответом</p>
+          {!hasMessages && (
+            <section className="prompt-grid" aria-label="Готовые вопросы">
+              {prompts.map(({ label, question, icon }) => (
+                <button className="prompt-card" key={label} onClick={() => submitPrompt(question)} type="button">
+                  <AssistantIcon name={icon} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </section>
+          )}
+          <nav aria-label="Полезные ссылки УУНиТ" className="welcome-links">
+            <a href={universityUrl + 'admission/'} target="_blank" rel="noreferrer">Приёмная комиссия</a>
+            <a href={universityUrl + 'digital-services/'} target="_blank" rel="noreferrer">Сервисы УУНиТ</a>
+          </nav>
         </div>
       </main>
-      {!isLoading && <IdleSnow />}
+      <FavoritesDialog
+        dialogRef={favoritesDialogRef}
+        favorites={favorites}
+        hasError={favoriteError}
+        onRemove={(message) => changeFavorite(message, false)}
+      />
+      <AccountDialog
+        dialogRef={accountDialogRef}
+        open={accountOpen}
+        account={account}
+        onClose={() => setAccountOpen(false)}
+        onAccountChange={changeAccount}
+        onChat={restoreChat}
+      />
+      {!isLoading && <IdleSeason />}
     </div>
   )
 }

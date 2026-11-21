@@ -1,21 +1,66 @@
-import type { ChatMessage } from '../../redux/assistantSlice'
+import type { ChatMessage, MessageBlock } from '../../api/messageBlocks'
 import { AssistantIcon, AssistantMark } from './AssistantIcon'
+import { RouteCard } from './RouteCard'
 
 interface MessageBubbleProps {
   message: ChatMessage
-  onFollowUp: (prompt: string) => void
-  isLoading: boolean
+  onFollowUp?: (prompt: string) => void
+  isLoading?: boolean
+  isFavorite?: boolean
+  onToggleFavorite?: () => void
 }
 
-export function MessageBubble({ message, onFollowUp, isLoading }: MessageBubbleProps) {
+function BlockView({ block }: { block: MessageBlock }) {
+  switch (block.type) {
+    case 'text':
+      return <div className="message-bubble">{block.message}</div>
+    case 'attachments':
+      return (
+        <div className="message-attachments">
+          {block.attachments.map(({ id, contentType, filename, url }) => (
+            <a className="message-attachment" href={url} key={id} rel="noreferrer" target="_blank">
+              {contentType.startsWith('image/') && (
+                <img alt="" loading="lazy" referrerPolicy="no-referrer" src={url} />
+              )}
+              <span>{filename}</span>
+            </a>
+          ))}
+        </div>
+      )
+    case 'map':
+      return <RouteCard points={block.points} />
+  }
+}
+
+export function MessageBubble({ message, onFollowUp, isLoading, isFavorite, onToggleFavorite }: MessageBubbleProps) {
   const isAssistant = message.role === 'assistant'
+  const favoriteTitle = isFavorite ? 'Убрать из избранного' : 'Сохранить в избранное'
 
   return (
-    <article className={isAssistant ? 'message-row assistant-row' : 'message-row user-row'}>
-      {isAssistant && <AssistantMark />}
+    <article aria-label={isAssistant ? 'Помощник УУНиТ' : 'Вы'} className={isAssistant ? 'message-row assistant-row' : 'message-row user-row'}>
+      {isAssistant && (
+        <div className="message-aside">
+          <AssistantMark />
+          {onToggleFavorite && (
+            <button
+              aria-label="Сохранить ответ в избранное"
+              aria-pressed={Boolean(isFavorite)}
+              className="message-favorite"
+              onClick={onToggleFavorite}
+              title={favoriteTitle}
+              type="button"
+            >
+              <AssistantIcon name="star" />
+            </button>
+          )}
+        </div>
+      )}
       <div className="message-content">
-        <div className="message-author">{isAssistant ? 'Помощник УУНиТ' : 'Вы'}</div>
-        <div className="message-bubble">{message.content}</div>
+        <div className="message-blocks">
+          {message.blocks.length
+            ? message.blocks.map((block, index) => <BlockView block={block} key={index} />)
+            : <div className="message-bubble">Формат ответа пока не поддерживается.</div>}
+        </div>
         {Boolean(message.sources?.length) && (
           <div className="source-list">
             <p className="source-list-title">Источники</p>
@@ -36,7 +81,7 @@ export function MessageBubble({ message, onFollowUp, isLoading }: MessageBubbleP
             ))}
           </div>
         )}
-        {Boolean(message.followUps?.length) && (
+        {onFollowUp && Boolean(message.followUps?.length) && (
           <div className="follow-up-list">
             {message.followUps?.map((prompt) => (
               <button disabled={isLoading} key={prompt} onClick={() => onFollowUp(prompt)} type="button">
