@@ -5,6 +5,17 @@ x-rabbitmq-environment: &rabbitmq-environment
   RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-agent_requests}
   RABBITMQ_RESPONSE_QUEUE: ${RABBITMQ_RESPONSE_QUEUE:-agent_responses}
 
+x-rag-environment: &rag-environment
+  RAG_POSTGRES_HOST: postgres
+  RAG_POSTGRES_PORT: 5432
+  RAG_POSTGRES_DB: ${POSTGRES_DB:-university}
+  RAG_POSTGRES_USER: ${RAG_POSTGRES_USER:-rag_app}
+  RAG_POSTGRES_PASSWORD: ${RAG_POSTGRES_PASSWORD:-rag_app}
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+  OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/}
+  OPENROUTER_EMBEDDING_MODEL: ${OPENROUTER_EMBEDDING_MODEL:-openai/text-embedding-3-small}
+  OPENROUTER_TIMEOUT_SECONDS: ${OPENROUTER_TIMEOUT_SECONDS:-180}
+
 services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg16
@@ -78,28 +89,14 @@ services:
       timeout: 5s
       retries: 20
 
-  ollama:
-    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
-    restart: unless-stopped
-    ports:
-      - "127.0.0.1:${OLLAMA_PORT:-11434}:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD", "ollama", "list"]
-      interval: 5s
-      timeout: 5s
-      retries: 20
-
-  ollama-init:
-    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
-    entrypoint: ["ollama"]
-    command: ["pull", "${OLLAMA_MODEL:-qwen3:4b}"]
-    environment:
-      OLLAMA_HOST: http://ollama:11434
+  rag-index:
+    build:
+      context: ./ai-service
+    command: ["python", "-m", "app.index_campus"]
+    environment: *rag-environment
     depends_on:
-      ollama:
-        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
 
   backend:
     build:
@@ -140,12 +137,9 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      <<: *rabbitmq-environment
-      OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
-      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-180}
-      OLLAMA_NUM_PREDICT: ${OLLAMA_NUM_PREDICT:-512}
-      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-4096}
+      <<: [*rabbitmq-environment, *rag-environment]
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-qwen/qwen3-30b-a3b-instruct-2507}
+      OPENROUTER_MAX_TOKENS: ${OPENROUTER_MAX_TOKENS:-1024}
       RETRY_DELAY_SECONDS: ${RETRY_DELAY_SECONDS:-5}
       RESPONSE_CACHE_SIZE: ${RESPONSE_CACHE_SIZE:-128}
     ports:
@@ -153,11 +147,10 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
-      ollama-init:
+      rag-index:
         condition: service_completed_successfully
 
 volumes:
   postgres_data:
   rabbitmq_data:
   minio_data:
-  ollama_data:

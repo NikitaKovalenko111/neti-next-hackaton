@@ -85,11 +85,25 @@ function parseBlock(value: unknown): MessageBlock | undefined {
 export function parseMessage(value: unknown, role: ChatMessage['role']): ChatMessage | undefined {
   if (!isRecord(value) || typeof value.message_id !== 'string' || !Array.isArray(value.blocks)) return
 
+  const sources = new Map<string, ChatSource>()
+  if (Array.isArray(value.sources)) {
+    for (const source of value.sources.filter(isSource)) {
+      sources.set(source.url, source)
+    }
+  }
+  for (const block of value.blocks) {
+    if (!isRecord(block) || block.type !== 'text' || !Array.isArray(block.source)) continue
+
+    for (const url of block.source.filter(isWebUrl)) {
+      if (!sources.has(url)) sources.set(url, { url, title: new URL(url).hostname })
+    }
+  }
+
   return {
     id: value.message_id,
     role,
     blocks: value.blocks.map(parseBlock).filter((block) => block !== undefined),
-    sources: Array.isArray(value.sources) ? value.sources.filter(isSource) : undefined,
+    sources: sources.size ? [...sources.values()] : undefined,
     followUps: Array.isArray(value.followUps)
       ? value.followUps.filter((prompt): prompt is string => typeof prompt === 'string' && Boolean(prompt.trim()))
       : undefined,

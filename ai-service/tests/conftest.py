@@ -8,7 +8,7 @@ from app.models import AgentRequest
 
 @pytest.fixture
 def settings() -> Settings:
-    return Settings(_env_file=None, retry_delay_seconds=0.001)
+    return Settings(_env_file=None, retry_delay_seconds=0.001, openrouter_api_key="test-key")
 
 
 @pytest.fixture

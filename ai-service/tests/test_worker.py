@@ -72,7 +72,7 @@ async def test_publish_failure_requeues_and_reuses_answer(settings, request_mess
 
 async def test_model_failure_requeues_without_publishing(settings, request_message):
     model = AsyncMock()
-    model.generate.side_effect = RuntimeError("Ollama unavailable")
+    model.generate.side_effect = RuntimeError("OpenRouter unavailable")
     worker = RabbitWorker(settings, AgentService(model))
     publish = AsyncMock()
     worker.channel = SimpleNamespace(default_exchange=SimpleNamespace(publish=publish))

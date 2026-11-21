@@ -1,16 +1,18 @@
 import asyncio
 import json
 import os
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 import aio_pika
 import httpx
 import pytest
 
-from app.clients.ollama import OllamaClient
+from app.clients.openrouter import OpenRouterClient
 from app.config import Settings
 from app.models import AgentResponse
 from app.services.agent import AgentService
+from app.services.tool_calling import ToolCallingAgent
 from app.transport.rabbitmq import RabbitWorker
 
 
@@ -30,14 +32,20 @@ async def test_real_rabbitmq_request_response_roundtrip(request_message):
     generations = []
 
     def respond(request):
-        generations.append(json.loads(request.content))
-        content = '{"audience":"unknown","answer":"Test answer"}'
-        return httpx.Response(200, json={"message": {"content": content}, "done": True})
+        payload = json.loads(request.content)
+        generations.append(payload)
+        content = "Test answer"
+        if "response_format" in payload:
+            content = json.dumps(
+                {"message": content, "source": [], "audience": "student", "map_point": "none"}
+            )
+        return httpx.Response(200, json={"choices": [{"message": {"content": content}}]})
 
     async with httpx.AsyncClient(
-        base_url=str(settings.ollama_base_url), transport=httpx.MockTransport(respond)
+        base_url=str(settings.openrouter_base_url), transport=httpx.MockTransport(respond)
     ) as client:
-        service = AgentService(OllamaClient(client, settings))
+        agent = ToolCallingAgent(OpenRouterClient(client, settings), AsyncMock())
+        service = AgentService(agent)
         worker = RabbitWorker(settings, service)
         connection = await aio_pika.connect_robust(broker_url, timeout=5)
 
@@ -66,12 +74,13 @@ async def test_real_rabbitmq_request_response_roundtrip(request_message):
                         response = AgentResponse.model_validate_json(message.body)
                         assert response.request_message_id == request_message.message_id
                         assert response.blocks[0].message == "Test answer"
+                        assert response.blocks[0].audience == "student"
                         assert message.correlation_id == str(request_message.message_id)
                         assert message.delivery_mode == aio_pika.DeliveryMode.PERSISTENT
                         response_ids.append(response.request_message_id)
                         await message.ack()
 
-                assert len(generations) == 1
+                assert len(generations) == 2
                 assert response_ids[0] == response_ids[1]
 
             finally:

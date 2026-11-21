@@ -10,7 +10,7 @@ async def test_health_and_lifespan(monkeypatch, settings):
     worker = SimpleNamespace(start=AsyncMock(), close=AsyncMock(), is_ready=True)
     model = SimpleNamespace(is_ready=AsyncMock(return_value=True))
     monkeypatch.setattr(main, "RabbitWorker", lambda *_: worker)
-    monkeypatch.setattr(main, "OllamaClient", lambda *_: model)
+    monkeypatch.setattr(main, "OpenRouterClient", lambda *_: model)
 
     application = main.create_app(settings)
     async with application.router.lifespan_context(application):

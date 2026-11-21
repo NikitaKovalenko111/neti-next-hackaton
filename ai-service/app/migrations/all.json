@@ -1,0 +1,1743 @@
+{
+  "metadata": {
+    "schema_version": "1.1",
+    "dataset": "УУНиТ: головной вуз, филиалы, учебные корпуса и общежития",
+    "as_of": "2026-11-20",
+    "country": "Россия",
+    "region": "Республика Башкортостан",
+    "disclaimer": "Адреса приведены по официальным ресурсам; данные с конфликтами обозначены отдельно. Фотографии привязаны к объектам только при достаточном подтверждении. Пустые поля НЕ означают отсутствия объекта.",
+    "source_policy": "Только подтверждённые открытые сведения; адреса с конфликтами отмечены отдельно; 2025 объявления не экстраполируются на 2026."
+  },
+  "branches": [
+    {
+      "id": "ufa",
+      "kind": "main_campus",
+      "city": "Уфа",
+      "name": "Уфимский университет науки и технологий (головной вуз)",
+      "abbreviation": "УУНиТ",
+      "formed_year": 2022,
+      "history": "Создан в 2022 году в результате объединения БашГУ и УГАТУ.",
+      "main_address": "ул. Заки Валиди, 32",
+      "website": "https://uust.ru/",
+      "sources": [
+        "official_branches"
+      ],
+      "housing_summary_id": "ufa",
+      "building_count_in_dataset": 26,
+      "dorm_count_with_address": 15
+    },
+    {
+      "id": "birsk",
+      "kind": "branch",
+      "city": "Бирск",
+      "name": "Бирский филиал УУНиТ",
+      "abbreviation": "БФ УУНиТ",
+      "formed_year": 1939,
+      "history": "Основан в 1939 году как Бирский учительский институт; с 2012 года был филиалом БашГУ, с 2022 года входит в УУНиТ.",
+      "main_address": "ул. Интернациональная, 10",
+      "website": "https://birsk.uust.ru/",
+      "sources": [
+        "birsk_history"
+      ],
+      "housing_summary_id": "birsk",
+      "building_count_in_dataset": 7,
+      "dorm_count_with_address": 5
+    },
+    {
+      "id": "sterlitamak",
+      "kind": "branch",
+      "city": "Стерлитамак",
+      "name": "Стерлитамакский филиал УУНиТ",
+      "abbreviation": "СФ УУНиТ",
+      "formed_year": null,
+      "history": "Нынешнее наименование и юридическое оформление филиала — с 1 ноября 2022 года; история предшествующих образовательных структур старше.",
+      "main_address": "просп. Ленина, 49",
+      "website": "https://str.uust.ru/",
+      "sources": [
+        "sterlitamak_buildings"
+      ],
+      "housing_summary_id": "sterlitamak",
+      "building_count_in_dataset": 9,
+      "dorm_count_with_address": 3
+    },
+    {
+      "id": "sibay",
+      "kind": "branch",
+      "city": "Сибай",
+      "name": "Сибайский институт (филиал) УУНиТ",
+      "abbreviation": "СИ УУНиТ",
+      "formed_year": 1998,
+      "history": "Создан в 1998 году объединением местных филиалов педагогического института и БашГУ; в составе УУНиТ с 1 ноября 2022 года.",
+      "main_address": "ул. Белова, 21",
+      "website": "https://sibay.uust.ru/",
+      "sources": [
+        "sibay_history",
+        "sibay_buildings"
+      ],
+      "housing_summary_id": "sibay",
+      "building_count_in_dataset": 3,
+      "dorm_count_with_address": 0
+    },
+    {
+      "id": "neftekamsk",
+      "kind": "branch",
+      "city": "Нефтекамск",
+      "name": "Нефтекамский филиал УУНиТ",
+      "abbreviation": "НФ УУНиТ",
+      "formed_year": null,
+      "history": "Филиал в Нефтекамске; действует в структуре УУНиТ с 2022 года. Ранняя история в этом выпуске не уточняется.",
+      "main_address": "ул. Трактовая, 1",
+      "website": "https://nf.uust.ru/",
+      "sources": [
+        "neftekamsk_buildings"
+      ],
+      "housing_summary_id": "neftekamsk",
+      "building_count_in_dataset": 2,
+      "dorm_count_with_address": 1
+    },
+    {
+      "id": "ishimbay",
+      "kind": "branch",
+      "city": "Ишимбай",
+      "name": "Филиал УУНиТ в г. Ишимбае",
+      "abbreviation": null,
+      "formed_year": 1982,
+      "history": "Образован в 1982 году для подготовки инженерно-технических кадров предприятий региона.",
+      "main_address": "ул. Губкина, 26",
+      "website": "https://uust.ru/if/",
+      "sources": [
+        "ishimbay_history",
+        "ishimbay_buildings"
+      ],
+      "housing_summary_id": "ishimbay",
+      "building_count_in_dataset": 1,
+      "dorm_count_with_address": 0
+    },
+    {
+      "id": "kumertau",
+      "kind": "branch",
+      "city": "Кумертау",
+      "name": "Филиал УУНиТ в г. Кумертау",
+      "abbreviation": null,
+      "formed_year": 1976,
+      "history": "Истоки — вечернее технологическое отделение Уфимского авиационного института, организованное приказом 1976 года; в 1999 году получен статус филиала УГАТУ.",
+      "main_address": "ул. Карла Маркса, 24",
+      "website": "https://uust.ru/kumertau/",
+      "sources": [
+        "kumertau_history",
+        "kumertau_buildings"
+      ],
+      "housing_summary_id": "kumertau",
+      "building_count_in_dataset": 3,
+      "dorm_count_with_address": 0
+    }
+  ],
+  "buildings": [
+    {
+      "id": "ufa-main",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Главный корпус",
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 32",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 32",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2032"
+    },
+    {
+      "id": "ufa-lab11",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебно-лабораторный корпус №11",
+      "city": "Уфа",
+      "address": "ул. Аксакова, 94",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Аксакова, 94",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%90%D0%BA%D1%81%D0%B0%D0%BA%D0%BE%D0%B2%D0%B0%2C%2094"
+    },
+    {
+      "id": "ufa-gubkina",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Уфа",
+      "address": "ул. Губкина, 10/3",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Губкина, 10/3",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%93%D1%83%D0%B1%D0%BA%D0%B8%D0%BD%D0%B0%2C%2010/3"
+    },
+    {
+      "id": "ufa-law",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Институт права",
+      "city": "Уфа",
+      "address": "ул. Достоевского, 131",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Достоевского, 131",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%94%D0%BE%D1%81%D1%82%D0%BE%D0%B5%D0%B2%D1%81%D0%BA%D0%BE%D0%B3%D0%BE%2C%20131"
+    },
+    {
+      "id": "ufa-fizmat",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Физико-математический корпус",
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 32/1",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 32/1",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2032/1"
+    },
+    {
+      "id": "ufa-bio",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Биологический корпус",
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 32/3",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 32/3",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2032/3"
+    },
+    {
+      "id": "ufa-sport",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебно-спортивный корпус",
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 32/4",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 32/4",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2032/4"
+    },
+    {
+      "id": "ufa-chem",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Химический корпус",
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 32/5",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 32/5",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2032/5"
+    },
+    {
+      "id": "ufa-zv33",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Корпус",
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 33/1",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 33/1",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2033/1"
+    },
+    {
+      "id": "ufa-km12-1",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №1",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012"
+    },
+    {
+      "id": "ufa-km12-2",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №2",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/2",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/2",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/2"
+    },
+    {
+      "id": "ufa-km12-3",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №3",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/3, пом. 6",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/3, пом. 6",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/3%2C%20%D0%BF%D0%BE%D0%BC.%206"
+    },
+    {
+      "id": "ufa-km12-5",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №5",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/5, пом. 6",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/5, пом. 6",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/5%2C%20%D0%BF%D0%BE%D0%BC.%206"
+    },
+    {
+      "id": "ufa-km12-4",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №4",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/5, пом. 7",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/5, пом. 7",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "address_conflict": {
+        "note": "В форме пропуска корпус №4 и №5 привязаны к одному дому 12/5, но к разным помещениям. Нельзя считать их отдельными зданиями без проверки.",
+        "status": "needs_manual_review"
+      },
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/5%2C%20%D0%BF%D0%BE%D0%BC.%207"
+    },
+    {
+      "id": "ufa-km12-6",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №6",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/6",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/6",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/6"
+    },
+    {
+      "id": "ufa-km12-7",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №7",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/7",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/7",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/7"
+    },
+    {
+      "id": "ufa-km12-8",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №8",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/8, пом. 8",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/8, пом. 8",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/8%2C%20%D0%BF%D0%BE%D0%BC.%208"
+    },
+    {
+      "id": "ufa-km12-9",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус №9",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 12/9",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 12/9",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2012/9"
+    },
+    {
+      "id": "ufa-human3-1",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Гуманитарный корпус",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 3/1",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 3/1",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%203/1"
+    },
+    {
+      "id": "ufa-human3-4",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Гуманитарный корпус",
+      "city": "Уфа",
+      "address": "ул. Карла Маркса, 3/4",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Карла Маркса, 3/4",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%203/4"
+    },
+    {
+      "id": "ufa-kom19",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Уфа",
+      "address": "ул. Коммунистическая, 19",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Коммунистическая, 19",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9A%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F%2C%2019"
+    },
+    {
+      "id": "ufa-len61",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Корпус ИСПО",
+      "city": "Уфа",
+      "address": "ул. Ленина, 61",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Ленина, 61",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2061"
+    },
+    {
+      "id": "ufa-men177",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Уфа",
+      "address": "ул. Менделеева, 177/5",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Менделеева, 177/5",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B5%D0%BD%D0%B4%D0%B5%D0%BB%D0%B5%D0%B5%D0%B2%D0%B0%2C%20177/5"
+    },
+    {
+      "id": "ufa-ming100",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Уфа",
+      "address": "ул. Мингажева, 100",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Мингажева, 100",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B8%D0%BD%D0%B3%D0%B0%D0%B6%D0%B5%D0%B2%D0%B0%2C%20100"
+    },
+    {
+      "id": "ufa-lab10",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебно-лабораторный корпус №10",
+      "city": "Уфа",
+      "address": "ул. Мингажева, 158/2",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Мингажева, 158/2",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B8%D0%BD%D0%B3%D0%B0%D0%B6%D0%B5%D0%B2%D0%B0%2C%20158/2"
+    },
+    {
+      "id": "ufa-per44",
+      "branch_id": "ufa",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Уфа",
+      "address": "ул. Первомайская, 44а",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Первомайская, 44а",
+      "photo_ids": [],
+      "source_ids": [
+        "main_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9F%D0%B5%D1%80%D0%B2%D0%BE%D0%BC%D0%B0%D0%B9%D1%81%D0%BA%D0%B0%D1%8F%2C%2044%D0%B0"
+    },
+    {
+      "id": "birsk-main",
+      "branch_id": "birsk",
+      "type": "academic_building",
+      "name": "Главный административный корпус",
+      "city": "Бирск",
+      "address": "ул. Интернациональная, 10",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Интернациональная, 10",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "note": "Несколько корпусов по адресу Интернациональная, 10 могут иметь разные входы и координаты.",
+      "candidate_photo_ids": [
+        "birsk-photo-001"
+      ],
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%2C%2010"
+    },
+    {
+      "id": "birsk-2",
+      "branch_id": "birsk",
+      "type": "academic_building",
+      "name": "Учебный корпус №2",
+      "city": "Бирск",
+      "address": "ул. Интернациональная, 10",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Интернациональная, 10",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "note": "Несколько корпусов по адресу Интернациональная, 10 могут иметь разные входы и координаты.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%2C%2010"
+    },
+    {
+      "id": "birsk-3",
+      "branch_id": "birsk",
+      "type": "academic_building",
+      "name": "Учебный корпус №3",
+      "city": "Бирск",
+      "address": "ул. Интернациональная, 10",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Интернациональная, 10",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "note": "Несколько корпусов по адресу Интернациональная, 10 могут иметь разные входы и координаты.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%2C%2010"
+    },
+    {
+      "id": "birsk-5",
+      "branch_id": "birsk",
+      "type": "academic_building",
+      "name": "Учебный корпус №5",
+      "city": "Бирск",
+      "address": "ул. Ленина, 35",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Ленина, 35",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2035"
+    },
+    {
+      "id": "birsk-7",
+      "branch_id": "birsk",
+      "type": "academic_building",
+      "name": "Учебный корпус №7",
+      "city": "Бирск",
+      "address": "ул. Красноармейская, 81",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Красноармейская, 81",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D1%80%D0%B0%D1%81%D0%BD%D0%BE%D0%B0%D1%80%D0%BC%D0%B5%D0%B9%D1%81%D0%BA%D0%B0%D1%8F%2C%2081"
+    },
+    {
+      "id": "birsk-8",
+      "branch_id": "birsk",
+      "type": "academic_building",
+      "name": "Учебный корпус №8",
+      "city": "Бирск",
+      "address": "ул. Ленина, 44",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Ленина, 44",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2044"
+    },
+    {
+      "id": "birsk-agro",
+      "branch_id": "birsk",
+      "type": "teaching_laboratory",
+      "name": "Агробиостанция",
+      "city": "Бирск",
+      "address": "ул. Интернациональная, 169",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Интернациональная, 169",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%2C%20169"
+    },
+    {
+      "id": "sterlitamak-main",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Главный корпус",
+      "city": "Стерлитамак",
+      "address": "просп. Ленина, 49",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, просп. Ленина, 49",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "candidate_photo_ids": [
+        "sterlitamak-photo-001"
+      ],
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2049"
+    },
+    {
+      "id": "sterlitamak-km125",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Стерлитамак",
+      "address": "ул. Карла Маркса, 125",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, ул. Карла Маркса, 125",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%20125"
+    },
+    {
+      "id": "sterlitamak-nature",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Корпус естественнонаучного факультета",
+      "city": "Стерлитамак",
+      "address": "просп. Ленина, 49а",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, просп. Ленина, 49а",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2049%D0%B0"
+    },
+    {
+      "id": "sterlitamak-college",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Учебный корпус колледжа",
+      "city": "Стерлитамак",
+      "address": "ул. Гоголя, 147",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, ул. Гоголя, 147",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D1%83%D0%BB.%20%D0%93%D0%BE%D0%B3%D0%BE%D0%BB%D1%8F%2C%20147"
+    },
+    {
+      "id": "sterlitamak-math",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Корпус факультета математики и информационных технологий",
+      "city": "Стерлитамак",
+      "address": "просп. Ленина, 37",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, просп. Ленина, 37",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2037"
+    },
+    {
+      "id": "sterlitamak-ped1",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Корпус факультета педагогики и психологии №1",
+      "city": "Стерлитамак",
+      "address": "ул. Комсомольская, 67",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, ул. Комсомольская, 67",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D0%BE%D0%BC%D1%81%D0%BE%D0%BC%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B0%D1%8F%2C%2067"
+    },
+    {
+      "id": "sterlitamak-ped2",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Корпус факультета педагогики и психологии №2",
+      "city": "Стерлитамак",
+      "address": "ул. Комсомольская, 67, стр. 1",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, ул. Комсомольская, 67, стр. 1",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D0%BE%D0%BC%D1%81%D0%BE%D0%BC%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B0%D1%8F%2C%2067%2C%20%D1%81%D1%82%D1%80.%201"
+    },
+    {
+      "id": "sterlitamak-economy",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Корпус экономического факультета",
+      "city": "Стерлитамак",
+      "address": "ул. Элеваторная, 80",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, ул. Элеваторная, 80",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D1%83%D0%BB.%20%D0%AD%D0%BB%D0%B5%D0%B2%D0%B0%D1%82%D0%BE%D1%80%D0%BD%D0%B0%D1%8F%2C%2080"
+    },
+    {
+      "id": "sterlitamak-law",
+      "branch_id": "sterlitamak",
+      "type": "academic_building",
+      "name": "Корпус юридического факультета",
+      "city": "Стерлитамак",
+      "address": "просп. Ленина, 47а",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, просп. Ленина, 47а",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2047%D0%B0"
+    },
+    {
+      "id": "sibay-main",
+      "branch_id": "sibay",
+      "type": "academic_building",
+      "name": "Учебный корпус, административный адрес",
+      "city": "Сибай",
+      "address": "ул. Белова, 21",
+      "full_address": "Россия, Республика Башкортостан, Сибай, ул. Белова, 21",
+      "photo_ids": [],
+      "source_ids": [
+        "sibay_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D0%B8%D0%B1%D0%B0%D0%B9%2C%20%D1%83%D0%BB.%20%D0%91%D0%B5%D0%BB%D0%BE%D0%B2%D0%B0%2C%2021"
+    },
+    {
+      "id": "sibay-gorn",
+      "branch_id": "sibay",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Сибай",
+      "address": "просп. Горняков, 10",
+      "full_address": "Россия, Республика Башкортостан, Сибай, просп. Горняков, 10",
+      "photo_ids": [],
+      "source_ids": [
+        "sibay_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D0%B8%D0%B1%D0%B0%D0%B9%2C%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%20%D0%93%D0%BE%D1%80%D0%BD%D1%8F%D0%BA%D0%BE%D0%B2%2C%2010"
+    },
+    {
+      "id": "sibay-may",
+      "branch_id": "sibay",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Сибай",
+      "address": "ул. Маяковского, 5",
+      "full_address": "Россия, Республика Башкортостан, Сибай, ул. Маяковского, 5",
+      "photo_ids": [],
+      "source_ids": [
+        "sibay_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D0%B8%D0%B1%D0%B0%D0%B9%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B0%D1%8F%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%BE%D0%B3%D0%BE%2C%205"
+    },
+    {
+      "id": "neftekamsk-trakt",
+      "branch_id": "neftekamsk",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Нефтекамск",
+      "address": "ул. Трактовая, 1",
+      "full_address": "Россия, Республика Башкортостан, Нефтекамск, ул. Трактовая, 1",
+      "photo_ids": [],
+      "source_ids": [
+        "neftekamsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%9D%D0%B5%D1%84%D1%82%D0%B5%D0%BA%D0%B0%D0%BC%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%A2%D1%80%D0%B0%D0%BA%D1%82%D0%BE%D0%B2%D0%B0%D1%8F%2C%201"
+    },
+    {
+      "id": "neftekamsk-kom",
+      "branch_id": "neftekamsk",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Нефтекамск",
+      "address": "Комсомольский просп., 19",
+      "full_address": "Россия, Республика Башкортостан, Нефтекамск, Комсомольский просп., 19",
+      "photo_ids": [],
+      "source_ids": [
+        "neftekamsk_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%9D%D0%B5%D1%84%D1%82%D0%B5%D0%BA%D0%B0%D0%BC%D1%81%D0%BA%2C%20%D0%9A%D0%BE%D0%BC%D1%81%D0%BE%D0%BC%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%2C%2019"
+    },
+    {
+      "id": "ishimbay-main",
+      "branch_id": "ishimbay",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Ишимбай",
+      "address": "ул. Губкина, 26",
+      "full_address": "Россия, Республика Башкортостан, Ишимбай, ул. Губкина, 26",
+      "photo_ids": [
+        "ishimbay-photo-001"
+      ],
+      "source_ids": [
+        "ishimbay_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%98%D1%88%D0%B8%D0%BC%D0%B1%D0%B0%D0%B9%2C%20%D1%83%D0%BB.%20%D0%93%D1%83%D0%B1%D0%BA%D0%B8%D0%BD%D0%B0%2C%2026"
+    },
+    {
+      "id": "kumertau-km",
+      "branch_id": "kumertau",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Кумертау",
+      "address": "ул. Карла Маркса, 24",
+      "full_address": "Россия, Республика Башкортостан, Кумертау, ул. Карла Маркса, 24",
+      "photo_ids": [],
+      "source_ids": [
+        "kumertau_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%9A%D1%83%D0%BC%D0%B5%D1%80%D1%82%D0%B0%D1%83%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B0%D1%80%D0%BB%D0%B0%20%D0%9C%D0%B0%D1%80%D0%BA%D1%81%D0%B0%2C%2024"
+    },
+    {
+      "id": "kumertau-gork",
+      "branch_id": "kumertau",
+      "type": "academic_building",
+      "name": "Учебный корпус",
+      "city": "Кумертау",
+      "address": "ул. Горького, 22А",
+      "full_address": "Россия, Республика Башкортостан, Кумертау, ул. Горького, 22А",
+      "photo_ids": [],
+      "source_ids": [
+        "kumertau_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%9A%D1%83%D0%BC%D0%B5%D1%80%D1%82%D0%B0%D1%83%2C%20%D1%83%D0%BB.%20%D0%93%D0%BE%D1%80%D1%8C%D0%BA%D0%BE%D0%B3%D0%BE%2C%2022%D0%90"
+    },
+    {
+      "id": "kumertau-lom",
+      "branch_id": "kumertau",
+      "type": "educational_site",
+      "name": "Учебная площадка",
+      "city": "Кумертау",
+      "address": "ул. Ломоносова, 31В",
+      "full_address": "Россия, Республика Башкортостан, Кумертау, ул. Ломоносова, 31В",
+      "photo_ids": [],
+      "source_ids": [
+        "kumertau_buildings"
+      ],
+      "verification": "official_address_confirmed",
+      "note": "Подтверждён адрес образовательной деятельности, но статус отдельного здания требует проверки.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%9A%D1%83%D0%BC%D0%B5%D1%80%D1%82%D0%B0%D1%83%2C%20%D1%83%D0%BB.%20%D0%9B%D0%BE%D0%BC%D0%BE%D0%BD%D0%BE%D1%81%D0%BE%D0%B2%D0%B0%2C%2031%D0%92"
+    }
+  ],
+  "dormitories": [
+    {
+      "id": "ufa-dorm-01",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №1",
+      "number": 1,
+      "city": "Уфа",
+      "address": "ул. 8 Марта, 2",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. 8 Марта, 2",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%208%20%D0%9C%D0%B0%D1%80%D1%82%D0%B0%2C%202"
+    },
+    {
+      "id": "ufa-dorm-02",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №2",
+      "number": 2,
+      "city": "Уфа",
+      "address": "ул. 8 Марта, 4",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. 8 Марта, 4",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%208%20%D0%9C%D0%B0%D1%80%D1%82%D0%B0%2C%204"
+    },
+    {
+      "id": "ufa-dorm-03",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №3",
+      "number": 3,
+      "city": "Уфа",
+      "address": "ул. 8 Марта, 6",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. 8 Марта, 6",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%208%20%D0%9C%D0%B0%D1%80%D1%82%D0%B0%2C%206"
+    },
+    {
+      "id": "ufa-dorm-04",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №4",
+      "number": 4,
+      "city": "Уфа",
+      "address": "ул. 8 Марта, 8",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. 8 Марта, 8",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%208%20%D0%9C%D0%B0%D1%80%D1%82%D0%B0%2C%208"
+    },
+    {
+      "id": "ufa-dorm-05",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №5",
+      "number": 5,
+      "city": "Уфа",
+      "address": "ул. Мингажева, 162",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Мингажева, 162",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B8%D0%BD%D0%B3%D0%B0%D0%B6%D0%B5%D0%B2%D0%B0%2C%20162"
+    },
+    {
+      "id": "ufa-dorm-06",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №6",
+      "number": 6,
+      "city": "Уфа",
+      "address": "ул. Мингажева, 160",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Мингажева, 160",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B8%D0%BD%D0%B3%D0%B0%D0%B6%D0%B5%D0%B2%D0%B0%2C%20160"
+    },
+    {
+      "id": "ufa-dorm-07",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №7",
+      "number": 7,
+      "city": "Уфа",
+      "address": "ул. Мингажева, 160/1",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Мингажева, 160/1",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B8%D0%BD%D0%B3%D0%B0%D0%B6%D0%B5%D0%B2%D0%B0%2C%20160/1"
+    },
+    {
+      "id": "ufa-dorm-08",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №8",
+      "number": 8,
+      "city": "Уфа",
+      "address": "ул. Мингажева, 160/2",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Мингажева, 160/2",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B8%D0%BD%D0%B3%D0%B0%D0%B6%D0%B5%D0%B2%D0%B0%2C%20160/2"
+    },
+    {
+      "id": "ufa-dorm-09",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №9",
+      "number": 9,
+      "city": "Уфа",
+      "address": "ул. Мингажева, 158/1",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Мингажева, 158/1",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%9C%D0%B8%D0%BD%D0%B3%D0%B0%D0%B6%D0%B5%D0%B2%D0%B0%2C%20158/1"
+    },
+    {
+      "id": "ufa-dorm-10",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №10",
+      "number": 10,
+      "city": "Уфа",
+      "address": "ул. Гоголя, 15",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Гоголя, 15",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%93%D0%BE%D0%B3%D0%BE%D0%BB%D1%8F%2C%2015"
+    },
+    {
+      "id": "ufa-dorm-11",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №11",
+      "number": 11,
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 32а",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 32а",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2032%D0%B0"
+    },
+    {
+      "id": "ufa-dorm-12",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №12",
+      "number": 12,
+      "city": "Уфа",
+      "address": "ул. Заки Валиди, 33",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Заки Валиди, 33",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%97%D0%B0%D0%BA%D0%B8%20%D0%92%D0%B0%D0%BB%D0%B8%D0%B4%D0%B8%2C%2033"
+    },
+    {
+      "id": "ufa-dorm-13",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №13",
+      "number": 13,
+      "city": "Уфа",
+      "address": "ул. Свердлова, 60/1",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Свердлова, 60/1",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%A1%D0%B2%D0%B5%D1%80%D0%B4%D0%BB%D0%BE%D0%B2%D0%B0%2C%2060/1"
+    },
+    {
+      "id": "ufa-dorm-14",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №14",
+      "number": 14,
+      "city": "Уфа",
+      "address": "ул. Достоевского, 133",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Достоевского, 133",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%94%D0%BE%D1%81%D1%82%D0%BE%D0%B5%D0%B2%D1%81%D0%BA%D0%BE%D0%B3%D0%BE%2C%20133"
+    },
+    {
+      "id": "ufa-dorm-15",
+      "branch_id": "ufa",
+      "type": "dormitory",
+      "name": "Общежитие №15",
+      "number": 15,
+      "city": "Уфа",
+      "address": "ул. Аксакова, 53",
+      "full_address": "Россия, Республика Башкортостан, Уфа, ул. Аксакова, 53",
+      "photo_ids": [],
+      "source_ids": [
+        "main_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A3%D1%84%D0%B0%2C%20%D1%83%D0%BB.%20%D0%90%D0%BA%D1%81%D0%B0%D0%BA%D0%BE%D0%B2%D0%B0%2C%2053"
+    },
+    {
+      "id": "birsk-dorm-1",
+      "branch_id": "birsk",
+      "type": "dormitory",
+      "name": "Общежитие №1",
+      "number": 1,
+      "city": "Бирск",
+      "address": "ул. Интернациональная, 10",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Интернациональная, 10",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "capacity_as_published": 179,
+      "floors": 4,
+      "construction_year": 1964,
+      "phone": "8 (34784) 4-04-43",
+      "capacity_note": "Публикация Бирского филиала; не является подтверждением фактического числа свободных мест на текущую дату.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%98%D0%BD%D1%82%D0%B5%D1%80%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F%2C%2010"
+    },
+    {
+      "id": "birsk-dorm-2",
+      "branch_id": "birsk",
+      "type": "dormitory",
+      "name": "Общежитие №2",
+      "number": 2,
+      "city": "Бирск",
+      "address": "ул. Коммунаров, 1",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Коммунаров, 1",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "capacity_as_published": 233,
+      "floors": 4,
+      "construction_year": 1965,
+      "phone": "8 (34784) 4-04-42",
+      "capacity_note": "Публикация Бирского филиала; не является подтверждением фактического числа свободных мест на текущую дату.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B0%D1%80%D0%BE%D0%B2%2C%201"
+    },
+    {
+      "id": "birsk-dorm-3",
+      "branch_id": "birsk",
+      "type": "dormitory",
+      "name": "Общежитие №3",
+      "number": 3,
+      "city": "Бирск",
+      "address": "ул. Коммунистическая, 63",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Коммунистическая, 63",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "capacity_as_published": 227,
+      "floors": 5,
+      "construction_year": 1987,
+      "phone": "8 (34784) 2-12-64",
+      "capacity_note": "Публикация Бирского филиала; не является подтверждением фактического числа свободных мест на текущую дату.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D0%BE%D0%BC%D0%BC%D1%83%D0%BD%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F%2C%2063"
+    },
+    {
+      "id": "birsk-dorm-4",
+      "branch_id": "birsk",
+      "type": "dormitory",
+      "name": "Общежитие №4",
+      "number": 4,
+      "city": "Бирск",
+      "address": "ул. Кирова, 18",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Кирова, 18",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "capacity_as_published": 350,
+      "floors": 5,
+      "construction_year": 1975,
+      "phone": "8 (34784) 2-10-87",
+      "capacity_note": "Публикация Бирского филиала; не является подтверждением фактического числа свободных мест на текущую дату.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%2C%2018"
+    },
+    {
+      "id": "birsk-dorm-5",
+      "branch_id": "birsk",
+      "type": "dormitory",
+      "name": "Общежитие №5",
+      "number": 5,
+      "city": "Бирск",
+      "address": "ул. Кирова, 16",
+      "full_address": "Россия, Республика Башкортостан, Бирск, ул. Кирова, 16",
+      "photo_ids": [],
+      "source_ids": [
+        "birsk_dormitories"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "capacity_as_published": 182,
+      "floors": 5,
+      "construction_year": 1975,
+      "phone": "8 (34784) 4-42-79",
+      "capacity_note": "Публикация Бирского филиала; не является подтверждением фактического числа свободных мест на текущую дату.",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%91%D0%B8%D1%80%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%9A%D0%B8%D1%80%D0%BE%D0%B2%D0%B0%2C%2016"
+    },
+    {
+      "id": "sterlitamak-dorm-1",
+      "branch_id": "sterlitamak",
+      "type": "dormitory",
+      "name": "Общежитие №1",
+      "number": 1,
+      "city": "Стерлитамак",
+      "address": "ул. Деповская, 27",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, ул. Деповская, 27",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_report",
+        "sterlitamak_dormitories",
+        "sterlitamak_dorm_2026"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "address_basis": "Официальный отчёт 2024; наличие общежитий №1–3 подтверждено заселением в 2026 году",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D1%83%D0%BB.%20%D0%94%D0%B5%D0%BF%D0%BE%D0%B2%D1%81%D0%BA%D0%B0%D1%8F%2C%2027"
+    },
+    {
+      "id": "sterlitamak-dorm-2",
+      "branch_id": "sterlitamak",
+      "type": "dormitory",
+      "name": "Общежитие №2",
+      "number": 2,
+      "city": "Стерлитамак",
+      "address": "просп. Ленина, 29",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, просп. Ленина, 29",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_report",
+        "sterlitamak_dormitories",
+        "sterlitamak_dorm_2026"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "address_basis": "Официальный отчёт 2024; наличие общежитий №1–3 подтверждено заселением в 2026 году",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2029"
+    },
+    {
+      "id": "sterlitamak-dorm-3",
+      "branch_id": "sterlitamak",
+      "type": "dormitory",
+      "name": "Общежитие №3",
+      "number": 3,
+      "city": "Стерлитамак",
+      "address": "просп. Ленина, 35",
+      "full_address": "Россия, Республика Башкортостан, Стерлитамак, просп. Ленина, 35",
+      "photo_ids": [],
+      "source_ids": [
+        "sterlitamak_report",
+        "sterlitamak_dormitories",
+        "sterlitamak_dorm_2026"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "address_basis": "Официальный отчёт 2024; наличие общежитий №1–3 подтверждено заселением в 2026 году",
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%A1%D1%82%D0%B5%D1%80%D0%BB%D0%B8%D1%82%D0%B0%D0%BC%D0%B0%D0%BA%2C%20%D0%BF%D1%80%D0%BE%D1%81%D0%BF.%20%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B0%2C%2035"
+    },
+    {
+      "id": "neftekamsk-dorm",
+      "branch_id": "neftekamsk",
+      "type": "dormitory",
+      "name": "Общежитие",
+      "number": null,
+      "city": "Нефтекамск",
+      "address": "ул. Социалистическая, 42А, стр. 30",
+      "full_address": "Россия, Республика Башкортостан, Нефтекамск, ул. Социалистическая, 42А, стр. 30",
+      "photo_ids": [],
+      "source_ids": [
+        "neftekamsk_dormitories",
+        "neftekamsk_dorm_structure"
+      ],
+      "verification": "official_address_confirmed",
+      "owner_type": "university",
+      "address_conflict": {
+        "status": "needs_manual_review",
+        "variants_in_official_sources": [
+          "ул. Социалистическая, 42А, стр. 30",
+          "ул. Социалистическая, 42А",
+          "ул. Социалистическая, 42Б"
+        ],
+        "note": "Сверить адрес в приёмной комиссии перед маршрутизацией."
+      },
+      "map_search_url": "https://yandex.ru/maps/?text=%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D1%8F%2C%20%D0%A0%D0%B5%D1%81%D0%BF%D1%83%D0%B1%D0%BB%D0%B8%D0%BA%D0%B0%20%D0%91%D0%B0%D1%88%D0%BA%D0%BE%D1%80%D1%82%D0%BE%D1%81%D1%82%D0%B0%D0%BD%2C%20%D0%9D%D0%B5%D1%84%D1%82%D0%B5%D0%BA%D0%B0%D0%BC%D1%81%D0%BA%2C%20%D1%83%D0%BB.%20%D0%A1%D0%BE%D1%86%D0%B8%D0%B0%D0%BB%D0%B8%D1%81%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B0%D1%8F%2C%2042%D0%90%2C%20%D1%81%D1%82%D1%80.%2030"
+    }
+  ],
+  "housing_inventory": [
+    {
+      "branch_id": "ufa",
+      "owned_dormitories_reported": 15,
+      "individual_records": 15,
+      "status": "confirmed_addresses",
+      "source_ids": [
+        "main_dormitories"
+      ]
+    },
+    {
+      "branch_id": "birsk",
+      "owned_dormitories_reported": 5,
+      "individual_records": 5,
+      "status": "confirmed_addresses",
+      "source_ids": [
+        "birsk_dormitories"
+      ]
+    },
+    {
+      "branch_id": "sterlitamak",
+      "owned_dormitories_reported": 3,
+      "individual_records": 3,
+      "status": "addresses_from_2024_report_2026_operation_confirmed",
+      "source_ids": [
+        "sterlitamak_report",
+        "sterlitamak_dorm_2026"
+      ]
+    },
+    {
+      "branch_id": "neftekamsk",
+      "owned_dormitories_reported": 1,
+      "individual_records": 1,
+      "status": "address_conflict",
+      "source_ids": [
+        "neftekamsk_dormitories",
+        "neftekamsk_dorm_structure"
+      ]
+    },
+    {
+      "branch_id": "sibay",
+      "owned_dormitories_reported": 4,
+      "individual_records": 0,
+      "status": "addresses_not_resolved",
+      "note": "Официальные материалы университета подтверждают наличие четырёх общежитий; адреса отдельных зданий не были достоверно установлены. Не создавать фиктивные адреса и номера.",
+      "source_ids": [
+        "sibay_dorm_university_news",
+        "sibay_dormitories"
+      ]
+    },
+    {
+      "branch_id": "ishimbay",
+      "owned_dormitories_reported": 0,
+      "individual_records": 0,
+      "status": "officially_not_available",
+      "note": "На официальной странице приёма указано отсутствие собственных общежитий для иногородних.",
+      "source_ids": [
+        "ishimbay_housing"
+      ]
+    },
+    {
+      "branch_id": "kumertau",
+      "owned_dormitories_reported": 0,
+      "individual_records": 0,
+      "status": "partner_housing_historical",
+      "note": "Публиковалось заселение обучающихся в общежитие Кумертауского педагогического колледжа (ул. 60 лет БАССР, 8); актуальность на 2026/27 не подтверждена. Не считать собственным объектом УУНиТ.",
+      "partner_housing": {
+        "name": "Общежитие КПК",
+        "address": "ул. 60 лет БАССР, 8",
+        "year_of_notice": 2025,
+        "is_uunit_owned": false,
+        "availability_2026_2027": "unverified"
+      },
+      "source_ids": [
+        "kumertau_housing"
+      ]
+    }
+  ],
+  "photos": [
+    {
+      "id": "ufa-photo-001",
+      "url": "https://uust.ru/media/gallery/albums/uunit-campus/00000006.jpg",
+      "object_id": null,
+      "branch_id": "ufa",
+      "kind": "facade",
+      "caption": "Фасад одного из корпусов УУНиТ; точный адрес кадра не подтверждён",
+      "attribution_status": "branch_only",
+      "source_ids": [
+        "university_photo_gallery"
+      ]
+    },
+    {
+      "id": "birsk-photo-001",
+      "url": "https://static.tildacdn.com/tild6339-3262-4630-b639-306164326538/_-.jpg",
+      "object_id": "birsk-main",
+      "branch_id": "birsk",
+      "kind": "facade",
+      "caption": "Фасад здания Бирского филиала (по подписи источника)",
+      "attribution_status": "object_probable",
+      "source_ids": [
+        "birsk_branch_photo"
+      ]
+    },
+    {
+      "id": "birsk-photo-002",
+      "url": "https://birsk.uust.ru/file/node/jPqwQs2394GZDOwP.jpg",
+      "object_id": null,
+      "branch_id": "birsk",
+      "kind": "dormitory_facade",
+      "caption": "Фотография общежития Бирского филиала; номер здания не подписан",
+      "attribution_status": "branch_only",
+      "source_ids": [
+        "birsk_dormitories"
+      ]
+    },
+    {
+      "id": "sterlitamak-photo-001",
+      "url": "https://uust.ru/media/uploads/ckeditor/2023/01/17/image-20230117100407-1.jpeg",
+      "object_id": "sterlitamak-main",
+      "branch_id": "sterlitamak",
+      "kind": "facade",
+      "caption": "Вход в здание Стерлитамакского филиала; официальный новостной материал",
+      "attribution_status": "object_probable",
+      "source_ids": [
+        "sterlitamak_branch_photo"
+      ]
+    },
+    {
+      "id": "ishimbay-photo-001",
+      "url": "https://uust.ru/media/uploads/ckeditor/archive/2022/10/27/image-20221027104050-1.jpeg",
+      "object_id": "ishimbay-main",
+      "branch_id": "ishimbay",
+      "kind": "facade",
+      "caption": "Вход в Ишимбайский филиал, архивный снимок 2022 г. со старой вывеской УГАТУ",
+      "attribution_status": "object_verified",
+      "historical_photo": true,
+      "source_ids": [
+        "ishimbay_building_photo"
+      ]
+    },
+    {
+      "id": "sibay-photo-001",
+      "url": "https://i.vuzopedia.ru/storage/app/uploads/public/63b/44a/c26/63b44ac26b41b750479466.jpg",
+      "object_id": null,
+      "branch_id": "sibay",
+      "kind": "facade",
+      "caption": "Фотография здания Сибайского института, номер корпуса не установлен",
+      "attribution_status": "branch_only",
+      "source_ids": [
+        "sibay_building_photo"
+      ]
+    },
+    {
+      "id": "ufa-dorm-gallery-001",
+      "url": "https://uust.ru/unit/media/uploads/subdivuploads/untitled%20folder/%D0%A1%D1%82%D1%83%D0%B4%D0%B5%D0%BD%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9%20%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%BE%D0%BA%20%E2%84%961%20%D0%B8%20%E2%84%962/%D0%9E%D0%B1%D1%89%D0%B5%D0%B6%D0%B8%D1%82%D0%B8%D0%B5%20%E2%84%964%20%D0%A1%D1%82%D1%83%D0%B4%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%BE%D0%BA%202.JPG",
+      "object_id": null,
+      "branch_id": "ufa",
+      "kind": "dormitory_facade",
+      "caption": "Фото общежития №4 в старой нумерации студгородка №2; соответствие новой нумерации не подтверждено",
+      "attribution_status": "branch_only",
+      "source_ids": [
+        "ufa_dorm_gallery"
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "official_branches",
+      "url": "https://uust.ru/education/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "main_buildings",
+      "url": "https://uust.ru/reception/pass-application/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "main_dormitories",
+      "url": "https://uust.ru/admission/dormitories/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "main_dorm_struct",
+      "url": "https://uust.ru/departments/student-campus-1/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "birsk_buildings",
+      "url": "https://birsk.uust.ru/sveden/common/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "birsk_dormitories",
+      "url": "https://birsk.uust.ru/node/1220",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "birsk_history",
+      "url": "https://birsk.uust.ru/sveden/common/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sterlitamak_buildings",
+      "url": "https://str.uust.ru/sveden/common",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sterlitamak_dormitories",
+      "url": "https://str.uust.ru/page/studencheskiy-gorodok",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sterlitamak_dorm_2026",
+      "url": "https://str.uust.ru/news/9717",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sterlitamak_report",
+      "url": "https://str.uust.ru/assets/sveden_files/documents/Otchet_o_samoobsledovanii_SF_UUNiT_2024.pdf",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sibay_buildings",
+      "url": "https://sibay.uust.ru/sveden/common/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sibay_dormitories",
+      "url": "https://sibay-uunit.ru/sveden/grants/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sibay_dorm_university_news",
+      "url": "https://uust.ru/news/get/premer-ministr-pravitelstva-bashkortostana-andrej-nazarov-posetil-sibajskij-filial/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sibay_history",
+      "url": "https://uust.ru/education/branch-sibay/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "neftekamsk_buildings",
+      "url": "https://nf.uust.ru/sveden/common",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "neftekamsk_dormitories",
+      "url": "https://nf.uust.ru/abitur",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "neftekamsk_dorm_structure",
+      "url": "https://uust.ru/sveden/struct/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "ishimbay_buildings",
+      "url": "https://uust.ru/if/svedencommon/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "ishimbay_housing",
+      "url": "https://uust.ru/if/abityr/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "ishimbay_history",
+      "url": "https://uust.ru/education/branch-ishimbay/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "kumertau_buildings",
+      "url": "https://uust.ru/kumertau/sveden/common/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "kumertau_housing",
+      "url": "https://uust.ru/kumertau/publications/adverts/get/600/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "kumertau_history",
+      "url": "https://uust.ru/education/branch-kumertau/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sterlitamak_coordinate",
+      "url": "https://ufa.bebeshka.info/sterlitamak/tochka-kipeniya-sf-uunit-1067393/",
+      "authority": "external",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "ufa_fizmat_coordinate",
+      "url": "https://mapcarta.com/W1118385870",
+      "authority": "external",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sibay_institute_coordinate",
+      "url": "https://mapcarta.com/W337967808",
+      "authority": "external",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "ufa_building8_coordinate",
+      "url": "https://mapcarta.com/W61673963",
+      "authority": "external",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "university_photo_gallery",
+      "url": "https://uust.ru/gallery/album/5uhtipff/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "birsk_branch_photo",
+      "url": "https://ldiss.rsl.ru/eng/tproduct/287200229-151826268111-birsk-branch-of-ufa-university-of-scienc",
+      "authority": "external",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sterlitamak_branch_photo",
+      "url": "https://uust.ru/news/get/sterlitamakskij-filial-uunit-pobedil-v-gorodskom-novogodnem-konkurse/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "ishimbay_building_photo",
+      "url": "https://uust.ru/news/archive/get/ishimbajskij-filial-ugatu-prazdnuet-40-letnij-yubilej/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "sibay_building_photo",
+      "url": "https://vuzopedia.ru/vuz/6593/bakalavriat",
+      "authority": "external",
+      "checked_on": "2026-11-20"
+    },
+    {
+      "id": "ufa_dorm_gallery",
+      "url": "https://uust.ru/campus/kampus13/",
+      "authority": "official",
+      "checked_on": "2026-11-20"
+    }
+  ]
+}

@@ -4,8 +4,8 @@ from uuid import UUID
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
-AnswerText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=900)]
 Audience = Literal["unknown", "applicant", "student"]
+MapPoint = Literal["none", "uust_main_building"]
 
 
 class Attachment(BaseModel):
@@ -45,9 +45,17 @@ class AgentRequest(BaseModel):
         return self
 
 
+class UserAnswer(BaseModel):
+    message: NonEmptyText
+    source: list[str] = Field(default_factory=list)
+    audience: Audience = "unknown"
+    map_point: MapPoint = "none"
+
+
 class TextBlock(BaseModel):
     type: Literal["text"] = "text"
     message: NonEmptyText
+    source: list[str] = Field(default_factory=list)
     audience: Audience = "unknown"
 
 
@@ -57,12 +65,6 @@ class MapBlock(BaseModel):
     lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
     title: NonEmptyText
     address: NonEmptyText
-
-
-class AssistantReply(BaseModel):
-    audience: Audience
-    answer: AnswerText
-    map_point: Literal["none", "uust_main_building"] = "none"
 
 
 class AgentResponse(BaseModel):

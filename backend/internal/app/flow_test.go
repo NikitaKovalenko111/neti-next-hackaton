@@ -155,10 +155,11 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 
 	attachmentID := uuid.New()
 	latitude, longitude := 54.720714, 55.933422
+	source := "https://uust.ru/reception/pass-application/"
 	reply := models.AgentResponse{
 		RequestMessageID: accepted.MessageID,
 		Blocks: []models.Block{
-			{Text: &models.TextBlock{Message: "Answer", Audience: "student"}},
+			{Text: &models.TextBlock{Message: "Answer", Audience: "student", Source: []string{source}}},
 			{Attachments: &models.AttachmentsBlock{Attachments: []models.AgentAttachment{{
 				ID: attachmentID, Bucket: "images", ObjectKey: "agent/image.png",
 				Filename: "image.png", ContentType: "image/png",
@@ -186,6 +187,9 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 			*pin.Lat != latitude || *pin.Lon != longitude {
 			t.Fatalf("invalid map sent over WebSocket: %+v", pin)
 		}
+		if got := event.Blocks[0].Text.Source; len(got) != 1 || got[0] != source {
+			t.Fatalf("invalid WebSocket sources: %v", got)
+		}
 		attachment := event.Blocks[1].Attachments.Attachments[0]
 		if attachment.ID != attachmentID || attachment.SizeBytes != 12 || attachment.URL == "" {
 			t.Fatalf("invalid response attachment: %+v", attachment)
@@ -210,6 +214,9 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		len(messages[1].Blocks) != 4 || messages[1].Blocks[0].Text.Message != "Answer" ||
 		messages[1].Blocks[3].Map == nil {
 		t.Fatalf("invalid history blocks: %+v", messages)
+	}
+	if got := messages[1].Blocks[0].Text.Source; len(got) != 1 || got[0] != source {
+		t.Fatalf("invalid history sources: %v", got)
 	}
 	if messages[1].Blocks[1].Attachments.Attachments[0].URL == first.Blocks[1].Attachments.Attachments[0].URL {
 		t.Fatal("history did not generate a fresh attachment URL")
