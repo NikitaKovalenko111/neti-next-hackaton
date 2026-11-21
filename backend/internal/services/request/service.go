@@ -2,7 +2,6 @@ package request
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -54,7 +53,7 @@ type Record struct {
 	NewChat bool
 	Message string
 	Result  Result
-	Task    []byte
+	Task    models.AgentRequest
 	Blocks  []models.Block
 }
 
@@ -179,11 +178,6 @@ func (s *Service) Create(ctx context.Context, input Input) (Result, error) {
 		})
 	}
 
-	payload, err := json.Marshal(task)
-	if err != nil {
-		return Result{}, fmt.Errorf("encode agent request: %w", err)
-	}
-
 	blocks := make([]models.Block, 0, 2)
 	if message != "" {
 		blocks = append(blocks, models.Block{Text: &models.TextBlock{Message: message}})
@@ -196,7 +190,7 @@ func (s *Service) Create(ctx context.Context, input Input) (Result, error) {
 
 	err = s.repo.Save(ctx, Record{
 		UserID: userID, NewChat: newChat, Message: message,
-		Result: result, Task: payload, Blocks: blocks,
+		Result: result, Task: task, Blocks: blocks,
 	})
 	if err != nil {
 		if errors.Is(err, ErrCommitUnknown) {

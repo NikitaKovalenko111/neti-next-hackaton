@@ -7,12 +7,13 @@
 
 ```sh
 docker compose up --build -d
-docker compose logs -f rag-index ai-service backend
+docker compose logs -f rag-index campus-photos ai-service backend
 ```
 
 Compose запускает локально backend, AI-сервис, PostgreSQL, RabbitMQ и MinIO.
 После подготовки PostgreSQL задача `rag-index` индексирует справочники через OpenRouter
-и сохраняет векторы в pgvector. AI-сервис запускается после завершения индексации
+и сохраняет векторы в pgvector. Задача `campus-photos` загружает фотографии
+справочника в MinIO. AI-сервис ждёт завершения обеих задач
 и отправляет в OpenRouter запросы на генерацию и поиск по смыслу.
 
 MinIO собирается из закреплённого исходного релиза `RELEASE.2025-09-07T16-13-09Z` через [deploy/minio/Dockerfile](deploy/minio/Dockerfile), поскольку [официальная community-версия распространяется как исходники](https://github.com/minio/minio#source-only-distribution). Dockerfile AI-сервиса находится в [ai-service/Dockerfile](ai-service/Dockerfile).
