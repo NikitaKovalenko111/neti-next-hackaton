@@ -11,13 +11,17 @@ async def test_response_matches_backend_blocks_contract(request_message):
 
     response = await AgentService(model).process(request_message)
 
-    assert response.model_dump(mode="json") == {
+    assert response.model_dump(mode="json", exclude_none=True) == {
         "request_message_id": str(request_message.message_id),
         "blocks": [
             {"type": "text", "message": "Уточните, пожалуйста, название корпуса.", "source": []}
         ],
     }
-    assert "используй инструменты" in model.generate.call_args.args[0]
+    prompt = model.generate.call_args.args[0]
+    assert "используй инструменты" in prompt
+    assert "обращайся на «вы»" in prompt
+    assert "уточняющий вопрос" in prompt
+    assert "Если информации достаточно, сразу дай ответ" in prompt
 
 
 async def test_attachments_are_metadata_only(request_message):

@@ -14,12 +14,24 @@ class Attachment(BaseModel):
     content_type: NonEmptyText
 
 
+class ConversationTurn(BaseModel):
+    user_message: str
+    assistant_message: str = ""
+
+
+class ConversationContext(BaseModel):
+    history_summary: str = ""
+    recent_turns: list[ConversationTurn] = Field(default_factory=list, max_length=5)
+    older_turns: list[ConversationTurn] = Field(default_factory=list)
+
+
 class AgentRequest(BaseModel):
     message_id: UUID
     chat_id: UUID
     user_id: UUID
     message: str = ""
     attachments: list[Attachment] = Field(default_factory=list)
+    conversation: ConversationContext | None = None
 
     @field_validator("message_id", "chat_id", "user_id")
     @classmethod
@@ -37,15 +49,20 @@ class AgentRequest(BaseModel):
         return self
 
 
-class UserAnswer(BaseModel):
+class AnswerText(BaseModel):
     message: NonEmptyText
     source: list[str] = Field(default_factory=list)
 
 
-class TextBlock(UserAnswer):
+class UserAnswer(AnswerText):
+    history_summary: str = ""
+
+
+class TextBlock(AnswerText):
     type: Literal["text"] = "text"
 
 
 class AgentResponse(BaseModel):
     request_message_id: UUID
     blocks: list[TextBlock] = Field(min_length=1)
+    history_summary: str | None = None

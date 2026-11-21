@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, call
 import httpx
 
 from app.clients.openrouter import OpenRouterClient
+from app.models import ConversationContext, ConversationTurn
 from app.services.agent import AgentService
 from app.services.tool_calling import MAX_TOOL_CALLS, MAX_TOOL_ROUNDS, ToolCallingAgent
 
@@ -156,3 +157,60 @@ async def test_repeated_requests_for_tools_end_after_max_rounds(settings):
 
     assert "не удалось завершить" in answer.message
     assert execute.await_count == MAX_TOOL_ROUNDS
+
+
+async def test_conversation_context_and_annotation_cross_queue_boundary(settings, request_message):
+    request_message.message = "Уфа"
+    request_message.conversation = ConversationContext(
+        history_summary="Пользователь ищет, где подать заявление.",
+        older_turns=[
+            ConversationTurn(user_message="Я хочу подать заявление о материальной помощи.")
+        ],
+        recent_turns=[
+            ConversationTurn(
+                user_message="Куда подать документы?",
+                assistant_message="В каком городе вы учитесь?",
+            )
+        ],
+    )
+    requests = []
+
+    def respond(request):
+        payload = json.loads(request.content)
+        requests.append(payload)
+        if len(requests) == 1:
+            assert "tools" not in payload
+            context = json.loads(payload["messages"][1]["content"])
+            assert "материальной помощи" in context["older_turns"][0]["user_message"]
+            return reply(content="Пользователь подаёт заявление о материальной помощи.")
+        if len(requests) == 2:
+            assert "материальной помощи" in payload["messages"][1]["content"]
+            assert payload["messages"][2:] == [
+                {"role": "user", "content": "Куда подать документы?"},
+                {"role": "assistant", "content": "В каком городе вы учитесь?"},
+                {"role": "user", "content": "Уфа"},
+            ]
+            return reply(content="В Уфе обращайтесь в студенческий офис.")
+        schema = payload["response_format"]["json_schema"]["schema"]
+        assert "history_summary" in schema["required"]
+        return reply(
+            content=json.dumps(
+                {
+                    "message": "В Уфе обращайтесь в студенческий офис.",
+                    "source": [],
+                    "history_summary": "Пользователь подаёт заявление о материальной помощи в Уфе.",
+                }
+            )
+        )
+
+    async with httpx.AsyncClient(
+        base_url=str(settings.openrouter_base_url),
+        transport=httpx.MockTransport(respond),
+    ) as client:
+        service = AgentService(ToolCallingAgent(OpenRouterClient(client, settings), AsyncMock()))
+        result = await service.process(request_message)
+
+    assert len(requests) == 3
+    payload = result.model_dump(mode="json", exclude_none=True)
+    assert payload["history_summary"].endswith("в Уфе.")
+    assert "history_summary" not in payload["blocks"][0]

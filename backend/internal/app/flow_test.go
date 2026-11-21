@@ -157,6 +157,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	source := "https://uust.ru/reception/pass-application/"
 	reply := models.AgentResponse{
 		RequestMessageID: accepted.MessageID,
+		HistorySummary:   "Original summary",
 		Blocks: []models.Block{
 			{Text: &models.TextBlock{Message: "Answer", Source: []string{source}}},
 			{Attachments: &models.AttachmentsBlock{Attachments: []models.AgentAttachment{{
@@ -194,6 +195,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		}
 		// A redelivery must use the saved blocks, even if the new payload changed.
 		reply.Blocks[0].Text.Message = "Changed answer"
+		reply.HistorySummary = "Changed summary"
 	}
 
 	messages, err := history.History(ctx, accepted.ChatID.String(), userID, "")
@@ -228,5 +230,76 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	messages, err = history.History(ctx, accepted.ChatID.String(), userID, accepted.MessageID.String())
 	if err != nil || len(messages) != 1 || messages[0].ID != first.MessageID {
 		t.Fatalf("cursor: %+v %v", messages, err)
+	}
+
+	var followups []uuid.UUID
+	for i := 0; i < 7; i++ {
+		var followupBody bytes.Buffer
+		form := multipart.NewWriter(&followupBody)
+		_ = form.WriteField("user_id", userID)
+		_ = form.WriteField("chat_id", accepted.ChatID.String())
+		_ = form.WriteField("message", fmt.Sprintf("Followup %d", i))
+		if err := form.Close(); err != nil {
+			t.Fatal(err)
+		}
+		followupResponse, err := http.Post(server.URL+"/request", form.FormDataContentType(), &followupBody)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var next struct {
+			ChatID    uuid.UUID `json:"chat_id"`
+			MessageID uuid.UUID `json:"message_id"`
+		}
+		err = json.NewDecoder(followupResponse.Body).Decode(&next)
+		followupResponse.Body.Close()
+		if err != nil || followupResponse.StatusCode != http.StatusAccepted || next.ChatID != accepted.ChatID {
+			t.Fatalf("HTTP followup did not continue the chat: %+v (%v)", next, err)
+		}
+		followups = append(followups, next.MessageID)
+	}
+	if err := agent.Dispatch(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	var firstFollowup, lastFollowup models.AgentRequest
+	for _, item := range publisher.tasks {
+		if item.MessageID == followups[0] {
+			if err := json.Unmarshal(item.Payload, &firstFollowup); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if item.MessageID == followups[6] {
+			if err := json.Unmarshal(item.Payload, &lastFollowup); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	snapshot := firstFollowup.Conversation
+	if snapshot == nil || snapshot.HistorySummary != "Original summary" ||
+		len(snapshot.RecentTurns) != 1 || snapshot.RecentTurns[0].AssistantMessage != "Answer\nFinal paragraph" {
+		t.Fatalf("unexpected first followup context: %+v", snapshot)
+	}
+	snapshot = lastFollowup.Conversation
+	if snapshot == nil || len(snapshot.RecentTurns) != 5 || len(snapshot.OlderTurns) != 1 ||
+		snapshot.RecentTurns[0].UserMessage != "Followup 1" ||
+		snapshot.OlderTurns[0].UserMessage != "Followup 0" {
+		t.Fatalf("unexpected last followup context: %+v", snapshot)
+	}
+
+	reply.Blocks = []models.Block{{Text: &models.TextBlock{Message: "Followup answer"}}}
+	reply.RequestMessageID = followups[6]
+	reply.HistorySummary = "Newer summary"
+	if err := agent.HandleResponse(ctx, reply); err != nil {
+		t.Fatal(err)
+	}
+	reply.RequestMessageID = followups[5]
+	reply.HistorySummary = "Stale summary"
+	if err := agent.HandleResponse(ctx, reply); err != nil {
+		t.Fatal(err)
+	}
+
+	var summary string
+	if err := db.QueryRow(ctx, `SELECT history_summary FROM chats WHERE id = $1`, accepted.ChatID).Scan(&summary); err != nil || summary != "Newer summary" {
+		t.Fatalf("unexpected saved annotation: %q (%v)", summary, err)
 	}
 }

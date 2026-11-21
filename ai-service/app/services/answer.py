@@ -3,6 +3,8 @@ from urllib.parse import urlsplit
 
 from app.models import UserAnswer
 
+HISTORY_SUMMARY_LIMIT = 2400
+
 ANSWER_FORMAT = {
     "type": "json_schema",
     "json_schema": {
@@ -19,6 +21,26 @@ ANSWER_FORMAT = {
         },
     },
 }
+
+
+def answer_format_with_history() -> dict:
+    return {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "university_answer_with_history",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    **ANSWER_FORMAT["json_schema"]["schema"]["properties"],
+                    "history_summary": {"type": "string"},
+                },
+                "required": ["message", "source", "history_summary"],
+                "additionalProperties": False,
+            },
+        },
+    }
+
 
 _SOURCE_FIELDS = {"source", "sources", "source_url"}
 _INTERNAL_FIELDS = {"verification", "checked_on", "checked_at", "similarity"}
@@ -78,4 +100,8 @@ def parse_user_answer(content: str, allowed_sources: set[str]) -> UserAnswer:
     message = _LINK.sub(remove_citation, answer.message)
     message = re.sub(r"(?im)^[ \t]*(?:источники?|sources?)[ \t]*:[ \t]*$", "", message)
     message = re.sub(r"\s*\((?:status|verification)\s*:\s*[a-z]+(?:_[a-z]+)+\)", "", message)
-    return UserAnswer(message=message, source=list(cited))
+    return UserAnswer(
+        message=message,
+        source=list(cited),
+        history_summary=answer.history_summary.strip()[:HISTORY_SUMMARY_LIMIT],
+    )

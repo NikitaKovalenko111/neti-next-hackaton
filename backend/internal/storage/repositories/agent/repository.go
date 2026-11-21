@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 
 	"university-agent/internal/models"
 	service "university-agent/internal/services/agent"
@@ -56,12 +57,13 @@ func (r *Repository) SaveResponse(ctx context.Context, response models.AgentResp
 	defer tx.Rollback(context.Background())
 
 	var userID uuid.UUID
+	var turnNumber int64
 	event := models.ResponseEvent{Type: "agent_response", RequestMessageID: response.RequestMessageID}
 	err = tx.QueryRow(ctx, `
-		SELECT m.chat_id, c.user_id
+		SELECT m.chat_id, c.user_id, m.turn_number
 		FROM messages m JOIN chats c ON c.id = m.chat_id
-		WHERE m.id = $1 AND m.role = 'user'`, response.RequestMessageID,
-	).Scan(&event.ChatID, &userID)
+		WHERE m.id = $1 AND m.role = 'user' FOR NO KEY UPDATE OF c`, response.RequestMessageID,
+	).Scan(&event.ChatID, &userID, &turnNumber)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return uuid.Nil, event, service.ErrInvalidResponse
 	}
@@ -86,6 +88,17 @@ func (r *Repository) SaveResponse(ctx context.Context, response models.AgentResp
 	}
 
 	if err == nil {
+		if summary := strings.TrimSpace(response.HistorySummary); summary != "" {
+			_, err := tx.Exec(ctx, `
+				UPDATE chats SET history_summary = left($2, 2400), history_summary_through = $3
+				WHERE id = $1 AND history_summary_through < $3`,
+				event.ChatID, summary, turnNumber,
+			)
+			if err != nil {
+				return uuid.Nil, event, err
+			}
+		}
+
 		for _, block := range response.Blocks {
 			if block.Attachments == nil {
 				continue

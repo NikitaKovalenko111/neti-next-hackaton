@@ -11,7 +11,7 @@ from app.config import Settings
 from app.models import AgentRequest
 from app.services.agent import AgentService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("uvicorn.error").getChild(__name__)
 
 
 class RabbitWorker:
@@ -75,10 +75,20 @@ class RabbitWorker:
             return
 
         try:
+            conversation = request.conversation
+            logger.info(
+                "Agent request message_id=%s chat_id=%s context_present=%s "
+                "recent_turns=%d has_history_summary=%s",
+                request.message_id,
+                request.chat_id,
+                conversation is not None,
+                len(conversation.recent_turns) if conversation else 0,
+                bool(conversation and conversation.history_summary),
+            )
             response = await self.service.process(request)
             await self.channel.default_exchange.publish(
                 aio_pika.Message(
-                    body=response.model_dump_json().encode(),
+                    body=response.model_dump_json(exclude_none=True).encode(),
                     content_type="application/json",
                     delivery_mode=aio_pika.DeliveryMode.PERSISTENT,
                     message_id=str(request.message_id),
