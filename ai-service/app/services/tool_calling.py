@@ -8,7 +8,7 @@ import httpx
 
 from app.clients.openrouter import OpenRouterClient, answer_text
 from app.config import Settings
-from app.models import Attachment, ConversationContext, UserAnswer
+from app.models import Attachment, ConversationContext, MapPoint, UserAnswer
 from app.services.answer import (
     ADMISSION_GUIDE,
     ANSWER_FORMAT,
@@ -17,6 +17,7 @@ from app.services.answer import (
     answer_format_with_history,
     answer_from_draft,
     collect_campus_photos,
+    collect_map_points,
     collect_source_urls,
     model_tool_data,
     parse_user_answer,
@@ -82,6 +83,7 @@ class ToolCallingAgent:
         draft = None
         allowed_sources = {ADMISSION_GUIDE, STUDENT_SERVICES}
         allowed_photos: dict[str, Attachment] = {}
+        allowed_points: dict[str, MapPoint] = {}
 
         tool_choice = None
         if PROGRAM_CODE.search(user_prompt) and PASSING_SCORE_QUERY.search(user_prompt):
@@ -112,7 +114,9 @@ class ToolCallingAgent:
             assistant = {**message, "role": "assistant", "tool_calls": calls[:remaining]}
             messages.append(assistant)
             for call in assistant["tool_calls"]:
-                messages.append(await self.tool_message(call, allowed_sources, allowed_photos))
+                messages.append(
+                    await self.tool_message(call, allowed_sources, allowed_photos, allowed_points)
+                )
 
             remaining -= len(assistant["tool_calls"])
             if remaining == 0:
@@ -138,7 +142,10 @@ class ToolCallingAgent:
                     "Укажи audience по предыдущим и текущей репликам пользователя. "
                     "Укажи map_point по инструкции, если нужен маршрут или адрес. "
                     "В photo_ids верни ID снимков из list_photos, если пользователь запросил "
-                    "фото и у этих снимков photo_available=true. Иначе верни пустой массив."
+                    "фото и у этих снимков photo_available=true. Иначе верни пустой массив. "
+                    "Если пользователь просит показать объекты на карте, в map_place_ids верни "
+                    "ID нужных объектов из find_campus_details с purpose=map. В остальных "
+                    "случаях верни пустой массив. Не придумывай координаты."
                 ),
             }
         )
@@ -160,7 +167,9 @@ class ToolCallingAgent:
             )
             if not final.get("tool_calls"):
                 try:
-                    return parse_user_answer(answer_text(final), allowed_sources, allowed_photos)
+                    return parse_user_answer(
+                        answer_text(final), allowed_sources, allowed_photos, allowed_points
+                    )
                 except ValueError:
                     logger.warning("OpenRouter returned an invalid final answer format")
             if attempt == 0:
@@ -209,7 +218,11 @@ class ToolCallingAgent:
         return messages
 
     async def tool_message(
-        self, call: dict, allowed_sources: set[str], allowed_photos: dict[str, Attachment]
+        self,
+        call: dict,
+        allowed_sources: set[str],
+        allowed_photos: dict[str, Attachment],
+        allowed_points: dict[str, MapPoint],
     ) -> dict:
         function = call.get("function") if isinstance(call, dict) else None
         name = function.get("name") if isinstance(function, dict) else None
@@ -235,6 +248,9 @@ class ToolCallingAgent:
         allowed_sources.update(collect_source_urls(result))
         if name == "list_photos":
             allowed_photos.update(collect_campus_photos(result))
+        if name == "find_campus_details" and isinstance(arguments, dict):
+            if arguments.get("purpose") == "map":
+                allowed_points.update(collect_map_points(result))
         return {
             "role": "tool",
             "tool_call_id": call_id,

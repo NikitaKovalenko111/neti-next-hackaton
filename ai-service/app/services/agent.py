@@ -10,6 +10,7 @@ from app.models import (
     AttachmentsBlock,
     ConversationContext,
     MapBlock,
+    MapPoint,
     TextBlock,
     UserAnswer,
 )
@@ -46,6 +47,8 @@ SYSTEM_PROMPT = f"""Ты — дружелюбный помощник Уфимс�
 Для дат поступления и заселения используй get_university_dates, для стипендий find_scholarships.
 Для аннотаций к положениям используй search_university_documents, для ссылки на приказ или
 бланк — find_university_document_links. Для координат и доступности используй find_campus_details.
+Если просят показать объекты на карте, вызови find_campus_details с purpose=map.
+Если в базе нет координат, сообщи об этом и предложи известный адрес.
 Указывай год данных и их ограничения. Сведения без даты считай недатированными.
 Если пользователь просит фото, вызови list_photos. Для конкретного объекта сначала найди его ID.
 Если подтверждённого снимка нет, повтори поиск с include_unverified.
@@ -94,9 +97,9 @@ student — пользователь уже учится и спрашивает
 """
 
 # Address from https://uust.ru/page-contacts/, coordinates from the Yandex Maps address card.
-MAIN_BUILDING = MapBlock(
-    lat=54.720714,
-    lon=55.933422,
+MAIN_BUILDING = MapPoint(
+    latitude=54.720714,
+    longitude=55.933422,
     title="Главный корпус УУНиТ",
     address="Уфа, ул. Заки Валиди, 32",
 )
@@ -166,16 +169,20 @@ class AgentService:
             and NAVIGATION_REQUEST.search(request.message) is not None
         )
         sources = reply.source
-        if show_map and MAIN_BUILDING_SOURCE not in sources:
-            sources = [*sources, MAIN_BUILDING_SOURCE]
+        points = reply.map_points
+        if show_map and not points:
+            points = [MAIN_BUILDING]
+            if MAIN_BUILDING_SOURCE not in sources:
+                sources = [*sources, MAIN_BUILDING_SOURCE]
 
         blocks: list[TextBlock | AttachmentsBlock | MapBlock] = [
             TextBlock(message=reply.message, audience=reply.audience, source=sources)
         ]
         if reply.photos:
             blocks.append(AttachmentsBlock(attachments=reply.photos))
-        if show_map:
-            blocks.append(MAIN_BUILDING)
+        if points:
+            blocks.append(MapBlock(points=points))
+
         response = AgentResponse(
             request_message_id=request.message_id,
             blocks=blocks,

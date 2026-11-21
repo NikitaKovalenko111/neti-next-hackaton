@@ -47,6 +47,19 @@ function isSource(value: unknown): value is ChatSource {
     (value.section === undefined || typeof value.section === 'string')
 }
 
+function parseMapPoint(value: Record<string, unknown>, lat: unknown, lon: unknown): MapBlock | undefined {
+  if (typeof lat !== 'number' || typeof lon !== 'number' ||
+    !Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lon) || Math.abs(lon) > 180) return
+
+  return {
+    type: 'map',
+    lat,
+    lon,
+    title: typeof value.title === 'string' ? value.title : undefined,
+    address: typeof value.address === 'string' ? value.address : undefined,
+  }
+}
+
 function parseBlock(value: unknown): MessageBlock | undefined {
   if (!isRecord(value)) return
 
@@ -70,16 +83,7 @@ function parseBlock(value: unknown): MessageBlock | undefined {
     })
     if (attachments.length) return { type: 'attachments', attachments }
   }
-  if (value.type === 'map' && typeof value.lat === 'number' && typeof value.lon === 'number' &&
-    Number.isFinite(value.lat) && Math.abs(value.lat) <= 85 && Number.isFinite(value.lon) && Math.abs(value.lon) <= 180) {
-    return {
-      type: 'map',
-      lat: value.lat,
-      lon: value.lon,
-      title: typeof value.title === 'string' ? value.title : undefined,
-      address: typeof value.address === 'string' ? value.address : undefined,
-    }
-  }
+  if (value.type === 'map') return parseMapPoint(value, value.lat, value.lon)
 }
 
 export function parseMessage(value: unknown, role: ChatMessage['role']): ChatMessage | undefined {
@@ -99,10 +103,20 @@ export function parseMessage(value: unknown, role: ChatMessage['role']): ChatMes
     }
   }
 
+  const blocks = value.blocks.flatMap((block: unknown) => {
+    if (isRecord(block) && block.type === 'map' && Array.isArray(block.points)) {
+      return block.points
+        .map((point: unknown) => isRecord(point) ? parseMapPoint(point, point.latitude, point.longitude) : undefined)
+        .filter((point) => point !== undefined)
+    }
+    const parsed = parseBlock(block)
+    return parsed ? [parsed] : []
+  })
+
   return {
     id: value.message_id,
     role,
-    blocks: value.blocks.map(parseBlock).filter((block) => block !== undefined),
+    blocks,
     sources: sources.size ? [...sources.values()] : undefined,
     followUps: Array.isArray(value.followUps)
       ? value.followUps.filter((prompt): prompt is string => typeof prompt === 'string' && Boolean(prompt.trim()))

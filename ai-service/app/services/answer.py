@@ -3,7 +3,9 @@ from typing import get_args
 from urllib.parse import urlsplit
 from uuid import uuid4
 
-from app.models import Attachment, Audience, MapPoint, UserAnswer
+from pydantic import ValidationError
+
+from app.models import Attachment, Audience, MapPoint, MapPointID, UserAnswer
 
 ADMISSION_GUIDE = "https://uust.ru/admission/"
 STUDENT_SERVICES = "https://uust.ru/digital-services/"
@@ -20,10 +22,18 @@ ANSWER_FORMAT = {
                 "message": {"type": "string"},
                 "source": {"type": "array", "items": {"type": "string"}},
                 "audience": {"type": "string", "enum": list(get_args(Audience))},
-                "map_point": {"type": "string", "enum": list(get_args(MapPoint))},
+                "map_point": {"type": "string", "enum": list(get_args(MapPointID))},
                 "photo_ids": {"type": "array", "items": {"type": "string"}},
+                "map_place_ids": {"type": "array", "items": {"type": "string"}},
             },
-            "required": ["message", "source", "audience", "map_point", "photo_ids"],
+            "required": [
+                "message",
+                "source",
+                "audience",
+                "map_point",
+                "photo_ids",
+                "map_place_ids",
+            ],
             "additionalProperties": False,
         },
     },
@@ -132,13 +142,46 @@ def collect_campus_photos(result: dict) -> dict[str, Attachment]:
     return photos
 
 
+def collect_map_points(result: dict) -> dict[str, MapPoint]:
+    if result.get("status") != "ok" or not isinstance(result.get("data"), list):
+        return {}
+
+    points = {}
+    for row in result["data"]:
+        if not isinstance(row, dict) or not isinstance(row.get("id"), str):
+            continue
+        data = row.get("data")
+        if not isinstance(data, dict):
+            continue
+        address = data.get("address")
+        try:
+            point = MapPoint(
+                title=row.get("title"),
+                latitude=data.get("latitude"),
+                longitude=data.get("longitude"),
+                address=address if isinstance(address, str) and address.strip() else None,
+            )
+        except ValidationError:
+            continue
+        points[row["id"]] = point
+    return points
+
+
 def parse_user_answer(
-    content: str, allowed_sources: set[str], allowed_photos: dict[str, Attachment]
+    content: str,
+    allowed_sources: set[str],
+    allowed_photos: dict[str, Attachment],
+    allowed_points: dict[str, MapPoint],
 ) -> UserAnswer:
     content = content.removesuffix("<|endoftext|>").strip()
     fenced = _JSON_FENCE.fullmatch(content)
     answer = UserAnswer.model_validate_json(fenced[1] if fenced else content)
-    return sanitize_user_answer(answer, allowed_sources, allowed_photos)
+    validated = sanitize_user_answer(answer, allowed_sources, allowed_photos)
+    for place_id in dict.fromkeys(answer.map_place_ids):
+        point = allowed_points.get(place_id)
+        if point is not None and point not in validated.map_points:
+            validated.map_points.append(point)
+    return validated
 
 
 def answer_from_draft(content: str, allowed_sources: set[str]) -> UserAnswer:

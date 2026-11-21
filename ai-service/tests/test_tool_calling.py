@@ -325,6 +325,58 @@ async def test_conversation_context_and_annotation_cross_queue_boundary(settings
     assert "history_summary" not in payload["blocks"][0]
 
 
+async def test_agent_serializes_map_points_from_the_lookup(settings, request_message):
+    request_message.message = "Покажи главный корпус УУНиТ на карте"
+    main_building = {
+        "title": "Главный корпус",
+        "latitude": 54.720714,
+        "longitude": 55.933422,
+        "address": "Уфа, ул. Заки Валиди, 32",
+    }
+    execute = AsyncMock(
+        return_value={
+            "status": "ok",
+            "data": [
+                {"id": "main", "title": main_building["title"], "data": main_building},
+                {"id": "missing", "title": "Без координат", "data": {}},
+                {"id": "invalid", "title": "Ошибка", "data": {"latitude": -91, "longitude": 55}},
+            ],
+        }
+    )
+
+    def respond(request):
+        payload = json.loads(request.content)
+        if payload.get("tool_choice") == "none":
+            schema = payload["response_format"]["json_schema"]["schema"]
+            assert "map_place_ids" in schema["required"]
+            return reply(
+                content=json.dumps(
+                    {
+                        "message": "Вот главный корпус УУНиТ.",
+                        "map_place_ids": ["invented", "missing", "invalid", "main", "main"],
+                        "map_points": [
+                            {"title": "Выдуманная точка", "latitude": 1, "longitude": 2}
+                        ],
+                    }
+                )
+            )
+        if payload["messages"][-1]["role"] == "tool":
+            return reply(content="Вот главный корпус УУНиТ.")
+        return reply(
+            tool_calls=[tool_call("find_campus_details", purpose="map", query="главный корпус")]
+        )
+
+    async with httpx.AsyncClient(
+        base_url=str(settings.openrouter_base_url), transport=httpx.MockTransport(respond)
+    ) as client:
+        agent = AgentService(ToolCallingAgent(OpenRouterClient(client, settings), execute))
+        result = await agent.process(request_message)
+
+    assert result.model_dump(mode="json", exclude_none=True)["blocks"][1:] == [
+        {"type": "map", "points": [main_building]}
+    ]
+
+
 async def test_agent_attaches_only_imported_campus_photos(settings, request_message):
     fake_tool = AsyncMock(
         return_value={

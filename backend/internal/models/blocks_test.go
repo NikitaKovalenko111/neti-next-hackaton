@@ -13,8 +13,11 @@ func TestBlockDecoding(t *testing.T) {
 	}{
 		{"text", `{"type":"text","message":"Hello"}`, true},
 		{"attachments", `{"type":"attachments","attachments":[]}`, true},
-		{"map", `{"type":"map","lat":54.720714,"lon":55.933422,"title":"Campus"}`, true},
+		{"legacy map", `{"type":"map","lat":54.720714,"lon":55.933422,"title":"Campus"}`, true},
 		{"audience", `{"type":"text","message":"Hello","audience":"student"}`, true},
+		{"map", `{"type":"map","points":[{"title":"Campus","latitude":0,"longitude":0}]}`, true},
+		{"missing longitude", `{"type":"map","points":[{"title":"Campus","latitude":54}]}`, false},
+		{"null latitude", `{"type":"map","points":[{"title":"Campus","latitude":null,"longitude":55}]}`, false},
 		{"unknown type", `{"type":"video"}`, false},
 		{"missing type", `{"message":"Hello"}`, false},
 		{"mixed payload", `{"type":"text","message":"Hello","attachments":[]}`, false},

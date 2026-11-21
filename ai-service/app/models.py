@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field, StringConstraints, field_validator, model
 
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 Audience = Literal["unknown", "applicant", "student"]
-MapPoint = Literal["none", "uust_main_building"]
+MapPointID = Literal["none", "uust_main_building"]
 
 
 class Attachment(BaseModel):
@@ -63,28 +63,34 @@ class AnswerText(BaseModel):
     audience: Audience = "unknown"
 
 
+class MapPoint(BaseModel):
+    title: NonEmptyText
+    latitude: float = Field(strict=True, ge=-90, le=90)
+    longitude: float = Field(strict=True, ge=-180, le=180)
+    address: NonEmptyText | None = None
+
+
 class UserAnswer(AnswerText):
-    map_point: MapPoint = "none"
+    map_point: MapPointID = "none"
     history_summary: str = ""
     photo_ids: list[str] = Field(default_factory=list)
     photos: list[Attachment] = Field(default_factory=list)
+    map_place_ids: list[str] = Field(default_factory=list)
+    map_points: list[MapPoint] = Field(default_factory=list)
 
 
 class TextBlock(AnswerText):
     type: Literal["text"] = "text"
 
 
-class MapBlock(BaseModel):
-    type: Literal["map"] = "map"
-    lat: float = Field(ge=-85, le=85, allow_inf_nan=False)
-    lon: float = Field(ge=-180, le=180, allow_inf_nan=False)
-    title: NonEmptyText
-    address: NonEmptyText
-
-
 class AttachmentsBlock(BaseModel):
     type: Literal["attachments"] = "attachments"
     attachments: list[Attachment] = Field(min_length=1)
+
+
+class MapBlock(BaseModel):
+    type: Literal["map"] = "map"
+    points: list[MapPoint] = Field(min_length=1)
 
 
 class AgentResponse(BaseModel):

@@ -84,9 +84,27 @@ func (s *Service) Validate(ctx context.Context, blocks []models.Block) error {
 			}
 
 		case block.Map != nil && block.Text == nil && block.Attachments == nil:
-			if block.Map.Lat == nil || block.Map.Lon == nil ||
-				!(math.Abs(*block.Map.Lat) <= 85 && math.Abs(*block.Map.Lon) <= 180) {
-				return fmt.Errorf("%w: valid map coordinates are required", ErrInvalid)
+			if block.Map.Points == nil {
+				if block.Map.Lat == nil || block.Map.Lon == nil ||
+					!(math.Abs(*block.Map.Lat) <= 85 && math.Abs(*block.Map.Lon) <= 180) {
+					return fmt.Errorf("%w: valid map coordinates are required", ErrInvalid)
+				}
+				continue
+			}
+			if block.Map.Lat != nil || block.Map.Lon != nil || block.Map.Title != "" || block.Map.Address != "" {
+				return fmt.Errorf("%w: map block uses more than one format", ErrInvalid)
+			}
+			if len(block.Map.Points) == 0 {
+				return fmt.Errorf("%w: map points must not be empty", ErrInvalid)
+			}
+			for _, point := range block.Map.Points {
+				if strings.TrimSpace(point.Title) == "" {
+					return fmt.Errorf("%w: map point title is required", ErrInvalid)
+				}
+				if !(point.Latitude >= -90 && point.Latitude <= 90 &&
+					point.Longitude >= -180 && point.Longitude <= 180) {
+					return fmt.Errorf("%w: map point coordinates are out of range", ErrInvalid)
+				}
 			}
 
 		default:

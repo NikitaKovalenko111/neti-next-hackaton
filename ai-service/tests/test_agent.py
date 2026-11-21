@@ -96,7 +96,7 @@ async def test_previous_user_turn_informs_audience_and_map(request_message):
     assert response.blocks[0].source == ["https://uust.ru/page-contacts/"]
     assert response.blocks[0].audience == "student"
     assert response.blocks[1].type == "map"
-    assert response.blocks[1].address == "Уфа, ул. Заки Валиди, 32"
+    assert response.blocks[1].points[0].address == "Уфа, ул. Заки Валиди, 32"
 
 
 async def test_non_navigation_question_does_not_get_a_map(request_message):
