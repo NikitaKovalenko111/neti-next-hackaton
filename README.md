@@ -2,17 +2,18 @@
 
 ## Общий запуск
 
-Из корня репозитория:
+Из корня репозитория скопируйте `.env.example` в `.env`, если файла ещё нет.
+Укажите в `.env` значение `OPENROUTER_API_KEY` и запустите контейнеры. [Ключи OpenRouter](https://openrouter.ai/settings/keys)
 
 ```sh
-cp .env.example .env
 docker compose up --build -d
-docker compose logs -f ollama-init ai-service backend
+docker compose logs -f rag-index ai-service backend
 ```
 
-Общий `docker-compose.yml` поднимает backend, ai-service, PostgreSQL, RabbitMQ, MinIO и Ollama в одной сети. Отдельный `ollama-init` скачивает `qwen3:4b`; AI-сервис запускается после завершения загрузки. `postgres-init` готовит схемы и роли базы данных. Backend ждёт его завершения, готовности RabbitMQ и MinIO и автоматически применяет миграции. До готовности модели запросы могут накапливаться в очереди.
-
-Первый запуск требует сборки образов и загрузки модели. По умолчанию Ollama использует CPU. Frontend пока отсутствует в репозитории и в общий Compose не включён.
+Compose запускает локально backend, AI-сервис, PostgreSQL, RabbitMQ и MinIO.
+После подготовки PostgreSQL задача `rag-index` индексирует справочники через OpenRouter
+и сохраняет векторы в pgvector. AI-сервис запускается после завершения индексации
+и отправляет в OpenRouter запросы на генерацию и поиск по смыслу.
 
 MinIO собирается из закреплённого исходного релиза `RELEASE.2025-09-07T16-13-09Z` через [deploy/minio/Dockerfile](deploy/minio/Dockerfile), поскольку [официальная community-версия распространяется как исходники](https://github.com/minio/minio#source-only-distribution). Dockerfile AI-сервиса находится в [ai-service/Dockerfile](ai-service/Dockerfile).
 
@@ -28,7 +29,6 @@ MinIO собирается из закреплённого исходного р
 | RabbitMQ UI | http://localhost:15672 |
 | MinIO API | http://localhost:9000 |
 | MinIO Console | http://localhost:9001 |
-| Ollama | http://localhost:11434 |
 
 Все порты публикуются на `127.0.0.1`. PostgreSQL снаружи использует порт `5433`, чтобы не конфликтовать с локальной БД; внутри сети контейнеров — `5432`.
 
@@ -41,9 +41,9 @@ MinIO собирается из закреплённого исходного р
 | Схема | Роль | Назначение |
 | --- | --- | --- |
 | `backend` | `BACKEND_POSTGRES_USER` (по умолчанию `backend_app`) | Чаты, сообщения, вложения, outbox и журнал миграций Go |
-| `rag` | `RAG_POSTGRES_USER` (по умолчанию `rag_app`) | Будущие RAG-данные |
+| `rag` | `RAG_POSTGRES_USER` (по умолчанию `rag_app`) | Справочник кампуса и векторный поиск |
 
-Роли имеют права на свои схемы и не могут читать или изменять другую схему. Создание таблиц в `public` запрещено. Администратор остаётся отдельной ролью для обслуживания. В `rag` активируется расширение `vector` (pgvector), но таблиц пока нет; AI-сервис ещё не подключается к PostgreSQL.
+Роли имеют права на свои схемы и не могут читать или изменять другую схему. Создание таблиц в `public` запрещено. Администратор остаётся отдельной ролью для обслуживания. В `rag` активируется расширение `vector` (pgvector). Задача `rag-index` импортирует справочник из `all.json` и загружает эмбеддинги. [Запуск импорта и поиска](ai-service/README.md#справочник-кампуса).
 
 Пример подключения RAG-процесса с хоста: `postgres://rag_app:rag_app@localhost:5433/university?sslmode=disable&search_path=rag`. Из сети Compose вместо `localhost:5433` используется `postgres:5432`. Пароли задаются через `BACKEND_POSTGRES_PASSWORD` и `RAG_POSTGRES_PASSWORD`.
 

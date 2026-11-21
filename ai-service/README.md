@@ -2,9 +2,9 @@
 
 Для совместного запуска с backend используйте `docker compose up --build -d` из корня репозитория. Общая конфигурация и адреса описаны в [README проекта](../README.md). Ниже описаны самостоятельные способы запуска AI-сервиса.
 
-FastAPI-сервис получает задачи из RabbitMQ, вызывает Qwen3 4B через Ollama и публикует ответ обратно в очередь. Код разделён на транспорт `app/transport`, бизнес-логику `app/services` и HTTP-клиент модели `app/clients`.
+FastAPI-сервис получает задачи из RabbitMQ, вызывает Qwen3 через OpenRouter и публикует ответ обратно в очередь. Код разделён на транспорт `app/transport`, бизнес-логику `app/services` и HTTP-клиент модели `app/clients`.
 
-Генерация настоящая, но это прототип без RAG, поиска и инструментов. Модель получает только текущий текст сообщения и имена вложений. История чата не передаётся; изображения из MinIO не скачиваются и не анализируются. Системный промпт сообщает модели об этих ограничениях.
+AI-сервис передаёт Qwen инструменты поиска по кампусу и материальной поддержке. Модель может сделать несколько вызовов подряд, прочитать результаты и использовать их в ответе. Контекст начинается с текущего сообщения и имён вложений.
 
 ## Запуск с существующим RabbitMQ
 
@@ -17,32 +17,25 @@ pip install -e '.[dev]'
 cp .env.example .env
 ```
 
-Запустите установленный Ollama и скачайте модель:
+В `.env` задайте `OPENROUTER_API_KEY`, параметры PostgreSQL из `RAG_POSTGRES_*` и тот же брокер RabbitMQ и имена очередей, которые использует backend. После подготовки схемы `rag` выполните:
 
 ```sh
-ollama serve
-# В другом терминале:
-ollama pull qwen3:4b
-```
-
-В `.env` укажите тот же RabbitMQ и имена очередей, которые использует backend, затем:
-
-```sh
+python -m app.index_campus
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
 ```
 
-`GET http://localhost:8000/health` возвращает `200`, если worker подключён к RabbitMQ и Ollama содержит настроенную модель; иначе `503`. Запросы пользователей поступают через RabbitMQ, отдельного HTTP endpoint для генерации нет.
+`GET http://localhost:8000/health` возвращает `200`, если worker подключён к RabbitMQ и OpenRouter принимает API-ключ; иначе `503`. Запросы пользователей поступают через RabbitMQ, отдельного HTTP endpoint для генерации нет.
 
 ## Автономный запуск через Docker Compose
 
 ```sh
 docker compose up --build -d
-docker compose logs -f ollama-init ai-service
+docker compose logs -f rag-index ai-service
 ```
 
-Compose поднимает RabbitMQ, Ollama и AI-сервис. Одноразовый `ollama-init` скачивает `qwen3:4b`, после чего запускается worker. Первый запуск требует загрузки модели; данные RabbitMQ и Ollama сохраняются в volumes. По умолчанию используется CPU.
-
-Сервисы доступны на `localhost:8000` (AI), `localhost:11434` (Ollama) и `localhost:5672` (RabbitMQ). Для RabbitMQ в этом Compose логин и пароль — `university`; для подключения backend используйте `amqp://university:university@localhost:5672/`.
+Compose из каталога `ai-service` запускает PostgreSQL с pgvector, RabbitMQ и AI-сервис.
+Укажите `OPENROUTER_API_KEY` в `ai-service/.env` перед запуском. Воркер ждёт завершения
+`rag-index`. Сервисы доступны на `localhost:8000` (AI) и `localhost:5672` (RabbitMQ).
 
 Если backend уже использует свой RabbitMQ, используйте первый способ запуска или подключите контейнер AI-сервиса к тому же брокеру. Два разных брокера не обмениваются этими очередями автоматически.
 
@@ -55,11 +48,12 @@ Compose поднимает RabbitMQ, Ollama и AI-сервис. Одноразо
 | `RABBITMQ_URL` | `amqp://guest:guest@localhost:5672/` |
 | `RABBITMQ_QUEUE` | `agent_requests` |
 | `RABBITMQ_RESPONSE_QUEUE` | `agent_responses` |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` |
-| `OLLAMA_MODEL` | `qwen3:4b` |
-| `OLLAMA_TIMEOUT_SECONDS` | `180` |
-| `OLLAMA_NUM_PREDICT` | `512` |
-| `OLLAMA_NUM_CTX` | `4096` |
+| `OPENROUTER_API_KEY` | Задаётся в `.env` |
+| `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1/` |
+| `OPENROUTER_MODEL` | `qwen/qwen3-30b-a3b-instruct-2507` |
+| `OPENROUTER_EMBEDDING_MODEL` | `openai/text-embedding-3-small` |
+| `OPENROUTER_TIMEOUT_SECONDS` | `180` |
+| `OPENROUTER_MAX_TOKENS` | `1024` |
 | `RETRY_DELAY_SECONDS` | `5` |
 | `RESPONSE_CACHE_SIZE` | `128` |
 
@@ -101,6 +95,47 @@ Compose поднимает RabbitMQ, Ollama и AI-сервис. Одноразо
 
 Успешные ответы кэшируются по `message_id` в ограниченном кэше в памяти. Это уменьшает повторные генерации, в том числе после ошибки публикации. Кэш теряется при перезапуске и не разделяется между процессами: доставка остаётся at-least-once, а backend сохраняет ответы идемпотентно по `request_message_id`.
 
+## Справочник кампуса
+
+Миграции в `app/migrations` загружают `all.json` в схему `rag` под отдельной ролью PostgreSQL. Таблицы хранят подразделения, корпуса, общежития, жилищные сводки, ссылки на фотографии и источники. Спорные адреса сохраняются отдельно. Векторный поиск работает по текстам карточек и жилищных сводок, а фотографии хранятся как ссылки со статусом привязки.
+
+Из корня репозитория запустите импорт и построение 1024-мерных эмбеддингов `openai/text-embedding-3-small` через OpenRouter:
+
+```sh
+docker compose up -d --build rag-index
+docker compose logs -f rag-index
+```
+
+Повторный запуск обрабатывает только карточки без актуального вектора для выбранной модели. Векторный поиск с фильтром по филиалу и типу карточки:
+
+```sh
+docker compose run --rm rag-index python -m app.index_campus \
+  --query 'Где находится общежитие в Нефтекамске?' \
+  --branch neftekamsk --kind dormitory
+```
+
+Для импорта только в PostgreSQL поднимите `postgres-init` из корня и выполните `python -m app.index_campus --import-only` из `ai-service` с учётными данными роли `rag_app`. Настройки локального подключения указаны в `.env.example`.
+
+## Материальная поддержка
+
+Задача `rag-index` импортирует `material_support.json` вместе со справочником кампуса. В PostgreSQL есть отдельные таблицы программ, оснований, обязательных документов, каналов подачи и источников. В `rag.support_ground_details` доступны суммы и коэффициенты, периодичность, общий срок подачи, особый срок с событием отсчёта, документы и страницы нормативного источника.
+
+Посмотреть основание и основной канал подачи для нужного филиала можно обычным SQL-запросом через CLI. Запрос выполняется без обращения к OpenRouter.
+
+```sh
+docker compose run --rm --no-deps rag-index python -m app.index_campus \
+  --ground death_of_close_relative --branch ufa
+```
+
+В pgvector сохраняются только заголовок, короткое описание и пояснения к основанию. По свободному вопросу поиск сначала подбирает основания по смыслу, затем читает точные сведения из PostgreSQL. Сходство текста служит для подбора кандидатов. Решение о помощи принимает комиссия.
+
+```sh
+docker compose run --rm --no-deps rag-index python -m app.index_campus \
+  --support-query 'нужны деньги на лекарства' --branch birsk
+```
+
+В одном ответе агент выполняет до четырёх раундов поиска и восьми вызовов. После лимита модель формирует ответ из собранных данных. [Каталог инструментов, параметры и примеры вызовов](tools/README.md).
+
 ## Проверка
 
 ```sh
@@ -109,7 +144,7 @@ ruff format --check .
 pytest -q
 ```
 
-Обычные тесты используют тестовые HTTP-ответы Ollama и проверяют контракт блоков, обработку ошибок, повторные доставки, порядок publish/ack и lifecycle FastAPI. Они не скачивают модель.
+Обычные тесты используют тестовые HTTP-ответы OpenRouter и проверяют контракт блоков, обработку ошибок, повторные доставки, порядок publish/ack и lifecycle FastAPI. Они используют локальные заглушки HTTP.
 
 Для интеграционного теста с настоящим RabbitMQ:
 
@@ -118,4 +153,4 @@ TEST_RABBITMQ_URL='amqp://university:university@localhost:5672/' \
   pytest -q -m integration
 ```
 
-Тест создаёт отдельные временные очереди и удаляет их после проверки. RabbitMQ настоящий, а ответ Ollama заменён тестовым. Без `TEST_RABBITMQ_URL` интеграционный тест пропускается.
+Тест создаёт отдельные временные очереди и удаляет их после проверки. RabbitMQ настоящий, а ответ OpenRouter заменён тестовым. Без `TEST_RABBITMQ_URL` интеграционный тест пропускается.

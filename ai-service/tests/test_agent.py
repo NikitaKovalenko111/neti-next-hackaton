@@ -13,9 +13,11 @@ async def test_response_matches_backend_blocks_contract(request_message):
 
     assert response.model_dump(mode="json") == {
         "request_message_id": str(request_message.message_id),
-        "blocks": [{"type": "text", "message": "Уточните, пожалуйста, название корпуса."}],
+        "blocks": [
+            {"type": "text", "message": "Уточните, пожалуйста, название корпуса.", "source": []}
+        ],
     }
-    assert "нет базы знаний" in model.generate.call_args.args[0]
+    assert "используй инструменты" in model.generate.call_args.args[0]
 
 
 async def test_attachments_are_metadata_only(request_message):
