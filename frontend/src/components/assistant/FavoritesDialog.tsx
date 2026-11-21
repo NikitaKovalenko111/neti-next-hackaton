@@ -3,12 +3,11 @@ import type { ChatMessage } from '../../api/messageBlocks'
 import { AssistantIcon } from './AssistantIcon'
 import { MessageBubble } from './MessageBubble'
 
-export function FavoritesDialog({ dialogRef, favorites, hasError, isLoading, onRemove }: {
+export function FavoritesDialog({ dialogRef, favorites, hasError, onRemove }: {
   dialogRef: RefObject<HTMLDialogElement | null>
   favorites: ChatMessage[]
   hasError: boolean
-  isLoading: boolean
-  onRemove: (message: ChatMessage) => Promise<boolean>
+  onRemove: (message: ChatMessage) => boolean
 }) {
   const closeRef = useRef<HTMLButtonElement>(null)
 
@@ -28,7 +27,7 @@ export function FavoritesDialog({ dialogRef, favorites, hasError, isLoading, onR
       </header>
       <div className="favorites-body">
         {hasError && <p className="favorite-error" role="alert">Не удалось обновить избранное.</p>}
-        {isLoading ? <p role="status">Загружаем избранное…</p> : favorites.length ? (
+        {favorites.length ? (
           <div className="favorites-list">
             {favorites.map((message) => (
               <MessageBubble
@@ -36,7 +35,7 @@ export function FavoritesDialog({ dialogRef, favorites, hasError, isLoading, onR
                 key={message.id}
                 message={message}
                 onToggleFavorite={() => {
-                  void onRemove(message).then((removed) => { if (removed) closeRef.current?.focus() })
+                  if (onRemove(message)) closeRef.current?.focus()
                 }}
               />
             ))}

@@ -4,7 +4,7 @@ import {
   type PayloadAction,
 } from '@reduxjs/toolkit'
 import type { AcceptedRequest } from '../api/api'
-import type { Account } from '../api/account'
+import { currentAccount, type Account } from '../api/account'
 import type { ChatMessage } from '../api/messageBlocks'
 
 interface AssistantState {
@@ -18,7 +18,7 @@ interface AssistantState {
 }
 
 const initialState: AssistantState = {
-  account: null,
+  account: currentAccount(),
   sessionId: crypto.randomUUID(),
   chatId: null,
   pendingMessageId: null,
@@ -34,7 +34,10 @@ const assistantSlice = createSlice({
   initialState,
   reducers: {
     accountChanged(state, action: PayloadAction<{ account: Account | null; sessionId: string }>) {
-      if (state.account?.id === action.payload.account?.id) return
+      if (state.account?.id === action.payload.account?.id) {
+        state.account = action.payload.account
+        return
+      }
       return { ...initialState, ...action.payload }
     },
     restoreChat(state, action: PayloadAction<{ accountId: string; sessionId: string; chatId: string; messages: ChatMessage[] }>) {

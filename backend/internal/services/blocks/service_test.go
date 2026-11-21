@@ -38,13 +38,9 @@ func TestValidateBlocks(t *testing.T) {
 	}{
 		{"no blocks", `[]`},
 		{"blank text", `[{"type":"text","message":"  "}]`},
-		{"unsupported audience", `[{"type":"text","message":"Hello","audience":"staff"}]`},
-		{"missing latitude", `[{"type":"map","lon":55}]`},
-		{"invalid longitude", `[{"type":"map","lat":54,"lon":181}]`},
 		{"no attachments", `[{"type":"attachments","attachments":[]}]`},
 		{"missing attachment fields", `[{"type":"attachments","attachments":[{}]}]`},
 		{"no map points", `[{"type":"map","points":[]}]`},
-		{"mixed map formats", `[{"type":"map","lat":54,"lon":55,"points":[{"title":"Campus","latitude":54,"longitude":55}]}]`},
 		{"blank map title", `[{"type":"map","points":[{"title":" ","latitude":54,"longitude":55}]}]`},
 		{"invalid latitude", `[{"type":"map","points":[{"title":"Campus","latitude":91,"longitude":55}]}]`},
 		{"invalid longitude", `[{"type":"map","points":[{"title":"Campus","latitude":54,"longitude":181}]}]`},

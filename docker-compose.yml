@@ -125,6 +125,8 @@ services:
     restart: unless-stopped
     environment:
       <<: *rabbitmq-environment
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_SECURE_COOKIE: ${JWT_SECURE_COOKIE:-false}
       HTTP_ADDRESS: :8080
       POSTGRES_URL: postgres://${BACKEND_POSTGRES_USER:-backend_app}:${BACKEND_POSTGRES_PASSWORD:-backend_app}@postgres:5432/${POSTGRES_DB:-university}?sslmode=disable&search_path=backend
       MINIO_ENDPOINT: minio:9000

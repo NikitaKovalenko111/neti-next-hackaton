@@ -31,11 +31,18 @@ func (r *Repository) Save(ctx context.Context, record service.Record) error {
 	var summary string
 	var summarizedThrough int64
 	if record.NewChat {
-		_, err = tx.Exec(ctx, `INSERT INTO chats (id, user_id) VALUES ($1, $2)`, record.Result.ChatID, record.UserID)
+		_, err = tx.Exec(ctx, `
+			INSERT INTO chats (id, user_id, guest_expires_at)
+			VALUES ($1, $2, CASE WHEN NOT $3::boolean THEN now() + interval '24 hours' END)`,
+			record.Result.ChatID, record.UserID, record.Registered)
 	} else {
 		err = tx.QueryRow(ctx,
-			`SELECT history_summary, history_summary_through FROM chats WHERE id = $1 AND user_id = $2 FOR NO KEY UPDATE`,
-			record.Result.ChatID, record.UserID,
+			`
+			SELECT history_summary, history_summary_through FROM chats
+			WHERE id = $1 AND user_id = $2
+			  AND CASE WHEN $3::boolean THEN guest_expires_at IS NULL ELSE guest_expires_at > now() END
+			FOR NO KEY UPDATE`,
+			record.Result.ChatID, record.UserID, record.Registered,
 		).Scan(&summary, &summarizedThrough)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return service.ErrChatNotFound

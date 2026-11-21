@@ -22,7 +22,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             worker = RabbitWorker(config, service)
             app.state.worker = worker
             app.state.model = model
-            app.state.provider = "ollama" if config.ollama_base_url else "openrouter"
 
             try:
                 await worker.start()
@@ -37,15 +36,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         worker = request.app.state.worker
         model = request.app.state.model
         rabbitmq_ready = worker.is_ready
-        model_ready = await model.is_ready()
-        ready = rabbitmq_ready and model_ready
+        openrouter_ready = await model.is_ready()
+        ready = rabbitmq_ready and openrouter_ready
 
         return JSONResponse(
             status_code=200 if ready else 503,
             content={
                 "status": "ok" if ready else "unavailable",
                 "rabbitmq": rabbitmq_ready,
-                request.app.state.provider: model_ready,
+                "openrouter": openrouter_ready,
             },
         )
 

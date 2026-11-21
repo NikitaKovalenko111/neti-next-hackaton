@@ -3,7 +3,7 @@ import { accountChat, accountChats, accountError, authenticate, logout, type Acc
 import type { ChatMessage } from '../../api/messageBlocks'
 import { AssistantIcon } from './AssistantIcon'
 
-const chatDate = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium' })
+const chatDate = new Intl.DateTimeFormat('ru-RU', { dateStyle: 'medium', timeStyle: 'medium' })
 
 function SavedChats({ account, busy, onOpen }: {
   account: Account
@@ -28,10 +28,10 @@ function SavedChats({ account, busy, onOpen }: {
         chats.length === 0 ? <p>Новые диалоги будут сохраняться здесь.</p> : (
           <ul>
             {chats.map((chat) => (
-              <li key={chat.id}>
+              <li key={chat.chat_id}>
                 <button disabled={busy} onClick={() => onOpen(chat)} type="button">
-                  <span>{chat.title}</span>
-                  <time dateTime={chat.updated_at}>{chatDate.format(new Date(chat.updated_at))}</time>
+                  <span>Диалог</span>
+                  <time dateTime={chat.created_at}>{chatDate.format(new Date(chat.created_at))}</time>
                 </button>
               </li>
             ))}
@@ -79,19 +79,16 @@ export function AccountDialog({ dialogRef, account, open, onClose, onAccountChan
   function selectChat(chat: SavedChat) {
     if (!account) return
     void run(async () => {
-      const messages = await accountChat(account.id, chat.id, AbortSignal.timeout(20000))
-      onChat(account.id, chat.id, messages)
+      const messages = await accountChat(account.id, chat.chat_id, AbortSignal.timeout(20000))
+      onChat(account.id, chat.chat_id, messages)
       dialogRef.current?.close()
     }, 'Не удалось открыть диалог. Попробуйте ещё раз.')
   }
 
   function signOut() {
-    if (!account) return
-    void run(async () => {
-      await logout(account.id)
-      onAccountChange(null)
-      dialogRef.current?.close()
-    }, 'Не удалось выйти из аккаунта. Попробуйте ещё раз.')
+    logout()
+    onAccountChange(null)
+    dialogRef.current?.close()
   }
 
   return (
@@ -120,15 +117,15 @@ export function AccountDialog({ dialogRef, account, open, onClose, onAccountChan
             </>
           ) : (
             <>
-              <p>Сохраняйте диалоги и избранное, чтобы открыть их на другом устройстве.</p>
+              <p>Войдите, чтобы открывать сохранённые диалоги на другом устройстве.</p>
               <form className="account-form" onSubmit={submit}>
                 <label>Логин
-                  <input autoComplete="username" maxLength={32} name="username" pattern={'[A-Za-z0-9_.\\-]{3,32}'} required />
+                  <input autoComplete="username" autoCapitalize="none" maxLength={32} name="username" pattern="[A-Za-z0-9_]{3,32}" required />
                 </label>
                 <label>Пароль
-                  <input autoComplete={mode === 'register' ? 'new-password' : 'current-password'} minLength={12} name="password" required type="password" />
+                  <input autoComplete={mode === 'register' ? 'new-password' : 'current-password'} name="password" required type="password" />
                 </label>
-                {mode === 'register' && <p className="account-hint">Логин от 3 символов латиницей, можно с цифрами. Пароль от 12 символов.</p>}
+                {mode === 'register' && <p className="account-hint">Логин из 3–32 латинских букв, цифр или подчёркиваний. Пароль от 8 до 72 байт.</p>}
                 <button className="new-chat-button" disabled={busy} type="submit">{busy ? 'Подождите…' : mode === 'register' ? 'Создать аккаунт' : 'Войти'}</button>
               </form>
               <div className="account-actions">

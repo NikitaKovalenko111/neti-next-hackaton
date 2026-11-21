@@ -7,9 +7,8 @@ import (
 )
 
 type TextBlock struct {
-	Message  string   `json:"message"`
-	Audience string   `json:"audience,omitempty"`
-	Source   []string `json:"source,omitempty"`
+	Message string   `json:"message"`
+	Source  []string `json:"source,omitempty"`
 }
 
 type AttachmentsBlock struct {
@@ -20,7 +19,6 @@ type MapPoint struct {
 	Title     string  `json:"title"`
 	Latitude  float64 `json:"latitude"`
 	Longitude float64 `json:"longitude"`
-	Address   string  `json:"address,omitempty"`
 }
 
 func (p *MapPoint) UnmarshalJSON(data []byte) error {
@@ -28,7 +26,6 @@ func (p *MapPoint) UnmarshalJSON(data []byte) error {
 		Title     string   `json:"title"`
 		Latitude  *float64 `json:"latitude"`
 		Longitude *float64 `json:"longitude"`
-		Address   string   `json:"address,omitempty"`
 	}
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
@@ -38,17 +35,12 @@ func (p *MapPoint) UnmarshalJSON(data []byte) error {
 	if value.Latitude == nil || value.Longitude == nil {
 		return fmt.Errorf("map point requires latitude and longitude")
 	}
-	*p = MapPoint{Title: value.Title, Latitude: *value.Latitude, Longitude: *value.Longitude, Address: value.Address}
+	*p = MapPoint{Title: value.Title, Latitude: *value.Latitude, Longitude: *value.Longitude}
 	return nil
 }
 
 type MapBlock struct {
-	Points []MapPoint `json:"points,omitempty"`
-	// Flat coordinates are present in previously stored chat history.
-	Lat     *float64 `json:"lat,omitempty"`
-	Lon     *float64 `json:"lon,omitempty"`
-	Title   string   `json:"title,omitempty"`
-	Address string   `json:"address,omitempty"`
+	Points []MapPoint `json:"points"`
 }
 
 // Block contains exactly one supported block payload.

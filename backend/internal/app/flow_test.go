@@ -8,7 +8,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/http/cookiejar"
 	"net/http/httptest"
 	"os"
 	"strings"
@@ -19,15 +18,15 @@ import (
 	"university-agent/internal/migrations"
 	"university-agent/internal/models"
 	agentservice "university-agent/internal/services/agent"
+	authservice "university-agent/internal/services/auth"
 	blockservice "university-agent/internal/services/blocks"
 	chatservice "university-agent/internal/services/chat"
 	requestservice "university-agent/internal/services/request"
-	accountrepo "university-agent/internal/storage/repositories/account"
 	agentrepo "university-agent/internal/storage/repositories/agent"
+	authrepo "university-agent/internal/storage/repositories/auth"
 	chatrepo "university-agent/internal/storage/repositories/chat"
 	requestrepo "university-agent/internal/storage/repositories/request"
 	transport "university-agent/internal/transport/http"
-	accountapi "university-agent/internal/transport/http/handlers/account"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -96,7 +95,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	agent := agentservice.New(agentrepo.New(db), publisher, hub, blocks)
 	request := requestservice.New(requestrepo.New(db), store, "images")
 	history := chatservice.New(chatrepo.New(db), blocks)
-	server := httptest.NewServer(transport.New(ctx, request, hub, history, accountapi.New(accountrepo.New(db))))
+	server := httptest.NewServer(transport.New(ctx, request, hub, history, authservice.New(authrepo.New(db), strings.Repeat("a", 32)), false))
 	defer server.Close()
 
 	userID := uuid.NewString()
@@ -163,7 +162,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		RequestMessageID: accepted.MessageID,
 		HistorySummary:   "Original summary",
 		Blocks: []models.Block{
-			{Text: &models.TextBlock{Message: "Answer", Audience: "student", Source: []string{source}}},
+			{Text: &models.TextBlock{Message: "Answer", Source: []string{source}}},
 			{Attachments: &models.AttachmentsBlock{Attachments: []models.AgentAttachment{{
 				ID: attachmentID, Bucket: "images", ObjectKey: "agent/image.png",
 				Filename: "image.png", ContentType: "image/png",
@@ -183,7 +182,6 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		}
 		if event.Type != "agent_response" || event.ChatID != accepted.ChatID ||
 			len(event.Blocks) != 4 || event.Blocks[0].Text.Message != "Answer" ||
-			event.Blocks[0].Text.Audience != "student" ||
 			event.Blocks[2].Text.Message != "Final paragraph" {
 			t.Fatalf("invalid event: %+v", event)
 		}
@@ -207,7 +205,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		reply.HistorySummary = "Changed summary"
 	}
 
-	messages, err := history.History(ctx, accepted.ChatID.String(), userID, "")
+	messages, err := history.History(ctx, accepted.ChatID.String(), userID, "", false)
 	if err != nil || len(messages) != 2 {
 		t.Fatalf("history: %+v %v", messages, err)
 	}
@@ -236,10 +234,10 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 	if err := db.QueryRow(ctx, `SELECT blocks FROM messages WHERE id = $1`, first.MessageID).Scan(&persisted); err != nil || bytes.Contains(persisted, []byte(`"url"`)) {
 		t.Fatalf("signed URL was persisted: %s %v", persisted, err)
 	}
-	if _, err := history.History(ctx, accepted.ChatID.String(), uuid.NewString(), ""); err != chatservice.ErrNotFound {
+	if _, err := history.History(ctx, accepted.ChatID.String(), uuid.NewString(), "", false); err != chatservice.ErrNotFound {
 		t.Fatalf("other user history: %v", err)
 	}
-	messages, err = history.History(ctx, accepted.ChatID.String(), userID, accepted.MessageID.String())
+	messages, err = history.History(ctx, accepted.ChatID.String(), userID, accepted.MessageID.String(), false)
 	if err != nil || len(messages) != 1 || messages[0].ID != first.MessageID {
 		t.Fatalf("cursor: %+v %v", messages, err)
 	}
@@ -333,7 +331,7 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		}
 	}
 
-	messages, err = history.History(ctx, accepted.ChatID.String(), userID, "")
+	messages, err = history.History(ctx, accepted.ChatID.String(), userID, "", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -344,125 +342,4 @@ func TestRequestAgentWebSocketFlow(t *testing.T) {
 		}
 	}
 
-	newChat, err := request.Create(ctx, requestservice.Input{UserID: userID, Message: "New chat"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := agent.Dispatch(ctx); err != nil {
-		t.Fatal(err)
-	}
-	lastTask := publisher.tasks[len(publisher.tasks)-1]
-	if lastTask.MessageID != newChat.MessageID {
-		t.Fatalf("new chat task missing: %s", newChat.MessageID)
-	}
-	var newRequest models.AgentRequest
-	if err := json.Unmarshal(lastTask.Payload, &newRequest); err != nil {
-		t.Fatal(err)
-	}
-	if c := newRequest.Conversation; c != nil && (c.HistorySummary != "" || len(c.RecentTurns)+len(c.OlderTurns) != 0) {
-		t.Fatalf("new chat inherited previous context: %+v", c)
-	}
-
-	t.Run("optional accounts keep their own chats and favorites", func(t *testing.T) {
-		testAccountFlow(t, ctx, server, agent)
-	})
-}
-
-func testAccountFlow(t *testing.T, ctx context.Context, server *httptest.Server, agent *agentservice.Service) {
-	t.Helper()
-	newBrowser := func() *http.Client {
-		jar, err := cookiejar.New(nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return &http.Client{Transport: server.Client().Transport, Jar: jar}
-	}
-	call := func(client *http.Client, method, path, body string, status int, out any) {
-		t.Helper()
-		request, err := http.NewRequestWithContext(ctx, method, server.URL+path, strings.NewReader(body))
-		if err != nil {
-			t.Fatal(err)
-		}
-		request.Header.Set("Content-Type", "application/json")
-		response, err := client.Do(request)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer response.Body.Close()
-		if response.StatusCode != status {
-			details, _ := io.ReadAll(response.Body)
-			t.Fatalf("%s %s: got %d, want %d: %s", method, path, response.StatusCode, status, details)
-		}
-		if out != nil {
-			if err := json.NewDecoder(response.Body).Decode(out); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-
-	guest, first, second := newBrowser(), newBrowser(), newBrowser()
-	call(guest, "GET", "/account/chats", "", 401, nil)
-	var owner models.Account
-	const credentials = `{"username":"student-one","password":"test password for accounts"}`
-	call(first, "POST", "/account/register", credentials, 200, &owner)
-	call(second, "POST", "/account/register", credentials, 409, nil)
-	call(second, "POST", "/account/login", `{"username":"student-one","password":"wrong password here"}`, 401, nil)
-	call(second, "POST", "/account/login", credentials, 200, nil)
-
-	var body bytes.Buffer
-	writer := multipart.NewWriter(&body)
-	_ = writer.WriteField("message", "My saved question")
-	_ = writer.WriteField("user_id", owner.ID.String())
-	_ = writer.Close()
-	response, err := first.Post(server.URL+"/request", writer.FormDataContentType(), &body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var accepted struct {
-		Chat    uuid.UUID `json:"chat_id"`
-		Message uuid.UUID `json:"message_id"`
-	}
-	decodeErr := json.NewDecoder(response.Body).Decode(&accepted)
-	response.Body.Close()
-	if response.StatusCode != 202 || decodeErr != nil || accepted.Chat == uuid.Nil {
-		t.Fatalf("account question was not accepted: %d (%v)", response.StatusCode, decodeErr)
-	}
-	if err := agent.HandleResponse(ctx, models.AgentResponse{
-		RequestMessageID: accepted.Message,
-		Blocks:           []models.Block{{Text: &models.TextBlock{Message: "A saved answer"}}},
-	}); err != nil {
-		t.Fatal(err)
-	}
-	var chats []models.ChatSummary
-	call(second, "GET", "/account/chats", "", 200, &chats)
-	if len(chats) != 1 || chats[0].ID != accepted.Chat || chats[0].Title != "My saved question" {
-		t.Fatalf("unexpected saved chats: %+v", chats)
-	}
-	chatPath := "/chats/" + accepted.Chat.String() + "/messages"
-	var messages []models.HistoryMessage
-	call(second, "GET", chatPath+"?user_id="+owner.ID.String(), "", 200, &messages)
-	if len(messages) != 2 || messages[1].Role != "assistant" {
-		t.Fatalf("unexpected saved messages: %+v", messages)
-	}
-	call(guest, "GET", chatPath+"?user_id="+owner.ID.String(), "", 401, nil)
-	call(guest, "GET", "/ws?user_id="+owner.ID.String(), "", 401, nil)
-	favoritePath := "/account/favorites/" + messages[1].ID.String()
-	call(first, "PUT", favoritePath, "", 204, nil)
-	call(first, "PUT", favoritePath, "", 204, nil)
-	var favorites []models.HistoryMessage
-	call(second, "GET", "/account/favorites", "", 200, &favorites)
-	if len(favorites) != 1 || favorites[0].ID != messages[1].ID {
-		t.Fatalf("unexpected synced favorites: %+v", favorites)
-	}
-	call(guest, "POST", "/account/register", `{"username":"other-student","password":"another test password"}`, 200, nil)
-	call(guest, "GET", chatPath, "", 404, nil)
-	call(guest, "PUT", favoritePath, "", 404, nil)
-	call(second, "DELETE", favoritePath, "", 204, nil)
-	call(first, "GET", "/account/favorites", "", 200, &favorites)
-	if len(favorites) != 0 {
-		t.Fatalf("favorite was not removed: %+v", favorites)
-	}
-	call(first, "POST", "/account/logout", "", 204, nil)
-	call(first, "GET", "/account/chats", "", 401, nil)
-	call(second, "GET", "/account/chats", "", 200, nil)
 }

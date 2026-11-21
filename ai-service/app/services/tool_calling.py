@@ -10,10 +10,8 @@ from app.clients.openrouter import OpenRouterClient, answer_text
 from app.config import Settings
 from app.models import Attachment, ConversationContext, MapPoint, UserAnswer
 from app.services.answer import (
-    ADMISSION_GUIDE,
     ANSWER_FORMAT,
     HISTORY_SUMMARY_LIMIT,
-    STUDENT_SERVICES,
     answer_format_with_history,
     answer_from_draft,
     collect_campus_photos,
@@ -30,8 +28,6 @@ MAX_TOOL_CALLS = 8
 HISTORY_BATCH_SIZE = 8
 PROGRAM_CODE = re.compile(r"\b[0-9]{2}\.[0-9]{2}\.[0-9]{2}\b")
 PASSING_SCORE_QUERY = re.compile(r"проходн\w*\s+балл\w*", re.IGNORECASE)
-MAP_QUERY = re.compile(r"\b(?:карт(?:а|е|у|ы|ой)|map)\b", re.IGNORECASE)
-ALL_PLACES_QUERY = re.compile(r"\b(?:вс[её](?:х|м)?|all)\b", re.IGNORECASE)
 SUMMARY_PROMPT = (
     "Обнови краткую аннотацию чата по полученной истории. Сохрани цель пользователя, "
     "важные детали, принятые решения и открытые вопросы. Учитывай исправления пользователя. "
@@ -55,7 +51,7 @@ class DatabaseTools:
                     name,
                     arguments,
                     embedding_client=self.client,
-                    embedding_model=self.settings.embedding_model,
+                    embedding_model=self.settings.openrouter_embedding_model,
                 )
         except (asyncpg.PostgresError, asyncpg.InterfaceError, OSError, TimeoutError):
             logger.warning("PostgreSQL unavailable for tool %s", name, exc_info=True)
@@ -83,7 +79,7 @@ class ToolCallingAgent:
         messages.append({"role": "user", "content": user_prompt})
         remaining = MAX_TOOL_CALLS
         draft = None
-        allowed_sources = {ADMISSION_GUIDE, STUDENT_SERVICES}
+        allowed_sources: set[str] = set()
         allowed_photos: dict[str, Attachment] = {}
         allowed_points: dict[str, MapPoint] = {}
 
@@ -108,6 +104,7 @@ class ToolCallingAgent:
                 content = message.get("content")
                 if isinstance(content, str) and content.strip():
                     draft = content.strip()
+                    messages.append({"role": "assistant", "content": draft})
                 break
             if not isinstance(calls, list):
                 raise ValueError("OpenRouter returned invalid tool calls")
@@ -124,10 +121,6 @@ class ToolCallingAgent:
             if remaining == 0:
                 break
 
-        requested_map = MAP_QUERY.search(user_prompt) is not None
-        fallback_points = list(allowed_points.values()) if requested_map else []
-        include_all_points = requested_map and ALL_PLACES_QUERY.search(user_prompt) is not None
-
         messages.append(
             {
                 "role": "user",
@@ -135,6 +128,7 @@ class ToolCallingAgent:
                     "Ответь на последнюю реплику пользователя в диалоге перед этим указанием. "
                     "Если это уточнение, примени его к исходной задаче из предыдущих реплик. "
                     "Учитывай уже названный город, вуз и обстоятельства. "
+                    "Если готовый ответ уже есть, сохрани его тему и конкретные советы. "
                     "Пиши на языке последнего сообщения пользователя, кроме названий и терминов. "
                     "Утверждения о конкретных программах вуза подтверждай результатами поиска. "
                     "Если просили составить текст, приведи сам текст в message. "
@@ -142,17 +136,13 @@ class ToolCallingAgent:
                     "в message один конкретный уточняющий вопрос. "
                     "Верни только объект JSON, без рассуждений. В message пиши ответ без ссылок "
                     "на источники и раздела "
-                    "«Источники». В source верни использованные ссылки из результатов поиска "
-                    "или официальных справочных страниц из системного сообщения. "
-                    "При отсутствии источников верни пустой массив. "
-                    "Укажи audience по предыдущим и текущей репликам пользователя. "
-                    "Укажи map_point по инструкции, если нужен маршрут или адрес. "
+                    "«Источники». В source верни массив ссылок из результатов инструментов, "
+                    "на которые опирается ответ. При отсутствии источников верни пустой массив. "
                     "В photo_ids верни ID снимков из list_photos, если пользователь запросил "
                     "фото и у этих снимков photo_available=true. Иначе верни пустой массив. "
                     "Если пользователь просит показать объекты на карте, в map_place_ids верни "
                     "ID нужных объектов из find_campus_details с purpose=map. В остальных "
-                    "случаях верни пустой массив. Если просили все объекты, верни все найденные "
-                    "ID нужного типа и филиала. Координаты и перечень меток в тексте не повторяй."
+                    "случаях верни пустой массив. Не придумывай координаты."
                 ),
             }
         )
@@ -174,12 +164,9 @@ class ToolCallingAgent:
             )
             if not final.get("tool_calls"):
                 try:
-                    answer = parse_user_answer(
+                    return parse_user_answer(
                         answer_text(final), allowed_sources, allowed_photos, allowed_points
                     )
-                    if fallback_points and (include_all_points or not answer.map_points):
-                        answer.map_points = fallback_points
-                    return answer
                 except ValueError:
                     logger.warning("OpenRouter returned an invalid final answer format")
             if attempt == 0:
@@ -190,16 +177,10 @@ class ToolCallingAgent:
 
         if draft is not None:
             try:
-                answer = answer_from_draft(draft, allowed_sources)
-                answer.map_points = fallback_points
-                return answer
+                return answer_from_draft(draft, allowed_sources)
             except ValueError:
                 logger.warning("OpenRouter did not return a usable text draft")
 
-        if fallback_points:
-            return UserAnswer(
-                message="Отметил на карте найденные места.", map_points=fallback_points
-            )
         return UserAnswer(
             message="Не удалось завершить подготовку ответа. Попробуйте отправить запрос ещё раз."
         )

@@ -319,8 +319,7 @@ async def find_campus_details(
                    AND jsonb_typeof(data->'longitude') = 'number'))
         ORDER BY CASE WHEN $4::text = 'map' AND lower(title) = lower($1) THEN 0 ELSE 1 END,
                  title, id
-        LIMIT CASE WHEN $4::text = 'map' AND $1::text IS NULL AND $3::text IS NOT NULL THEN 100
-                   WHEN $4::text = 'map' THEN 20 ELSE 6 END
+        LIMIT CASE WHEN $4::text = 'map' THEN 20 ELSE 6 END
         """,
         query,
         branch_id,

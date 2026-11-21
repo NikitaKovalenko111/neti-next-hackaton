@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"mime"
 	"strings"
 
@@ -45,11 +44,6 @@ func (s *Service) Validate(ctx context.Context, blocks []models.Block) error {
 			if strings.TrimSpace(block.Text.Message) == "" {
 				return fmt.Errorf("%w: text message is required", ErrInvalid)
 			}
-			switch block.Text.Audience {
-			case "", "unknown", "applicant", "student":
-			default:
-				return fmt.Errorf("%w: unsupported audience", ErrInvalid)
-			}
 
 		case block.Attachments != nil && block.Text == nil && block.Map == nil:
 			if len(block.Attachments.Attachments) == 0 {
@@ -84,16 +78,6 @@ func (s *Service) Validate(ctx context.Context, blocks []models.Block) error {
 			}
 
 		case block.Map != nil && block.Text == nil && block.Attachments == nil:
-			if block.Map.Points == nil {
-				if block.Map.Lat == nil || block.Map.Lon == nil ||
-					!(math.Abs(*block.Map.Lat) <= 85 && math.Abs(*block.Map.Lon) <= 180) {
-					return fmt.Errorf("%w: valid map coordinates are required", ErrInvalid)
-				}
-				continue
-			}
-			if block.Map.Lat != nil || block.Map.Lon != nil || block.Map.Title != "" || block.Map.Address != "" {
-				return fmt.Errorf("%w: map block uses more than one format", ErrInvalid)
-			}
 			if len(block.Map.Points) == 0 {
 				return fmt.Errorf("%w: map points must not be empty", ErrInvalid)
 			}

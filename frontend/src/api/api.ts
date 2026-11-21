@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { buffers, eventChannel } from 'redux-saga'
+import { accountHeaders } from './account'
 import { parseMessage, type ChatMessage } from './messageBlocks'
 
 export interface AcceptedRequest {
@@ -11,10 +12,15 @@ export type ChatSocketEvent =
   | { type: 'ready' | 'disconnected' }
   | ({ type: 'answer'; message: ChatMessage; requestMessageId: string } & Pick<AcceptedRequest, 'chatId'>)
 
-export function openChatSocket(userId: string) {
+export interface ChatIdentity {
+  guestId: string
+  accountId?: string
+}
+
+export function openChatSocket(identity: ChatIdentity) {
   const url = new URL('/ws', window.location.href)
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-  url.searchParams.set('user_id', userId)
+  if (!identity.accountId) url.searchParams.set('user_id', identity.guestId)
 
   return eventChannel<ChatSocketEvent>((emit) => {
     const socket = new WebSocket(url)
@@ -52,17 +58,18 @@ export function openChatSocket(userId: string) {
 }
 
 export async function sendAssistantMessage(
-  userId: string,
+  identity: ChatIdentity,
   chatId: string | null,
   message: string,
   signal: AbortSignal,
 ): Promise<AcceptedRequest> {
   const form = new FormData()
-  form.set('user_id', userId)
+  if (!identity.accountId) form.set('user_id', identity.guestId)
   form.set('message', message)
   if (chatId) form.set('chat_id', chatId)
 
-  const { data } = await axios.post('/request', form, { signal })
+  const headers = identity.accountId ? accountHeaders(identity.accountId) : undefined
+  const { data } = await axios.post('/request', form, { headers, signal })
   if (typeof data?.chat_id !== 'string' || typeof data?.message_id !== 'string') {
     throw new Error('Сервис не подтвердил отправку вопроса.')
   }
@@ -70,12 +77,13 @@ export async function sendAssistantMessage(
 }
 
 export async function recoverAnswer(
-  userId: string,
+  identity: ChatIdentity,
   request: AcceptedRequest,
   signal: AbortSignal,
 ): Promise<ChatMessage | undefined> {
   const { data } = await axios.get<unknown>(`/chats/${encodeURIComponent(request.chatId)}/messages`, {
-    params: { user_id: userId, after: request.messageId },
+    params: { user_id: identity.accountId ? undefined : identity.guestId, after: request.messageId },
+    headers: identity.accountId ? accountHeaders(identity.accountId) : undefined,
     signal,
   })
   if (!Array.isArray(data)) return

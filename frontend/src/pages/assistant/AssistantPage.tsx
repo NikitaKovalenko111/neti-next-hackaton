@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { accountFavorites, currentAccount, updateAccountFavorite, type Account } from '../../api/account'
+import { accountSessionKey, currentAccount, type Account } from '../../api/account'
 import type { ChatMessage } from '../../api/messageBlocks'
 import { AccountDialog } from '../../components/assistant/AccountDialog'
 import { AssistantIcon, AssistantMark } from '../../components/assistant/AssistantIcon'
@@ -14,7 +14,7 @@ import {
   requestAnswer,
 } from '../../redux/assistantSlice'
 import type { AppDispatch, RootState } from '../../redux/store'
-import { canSaveFavorite, favoritesKey, loadFavorites, snapshotFavorite, writeFavorites } from './favorites'
+import { canSaveFavorite, favoritesStorageKey, loadFavorites, snapshotFavorite, writeFavorites } from './favorites'
 
 const prompts = [
   { label: 'Поступление', question: 'Что нужно для поступления на бакалавриат?', icon: 'cap' },
@@ -28,39 +28,25 @@ const audienceLabels = {
   student: 'Студент',
 }
 
-const accountChangeKey = 'uust-account-change'
-
-interface AccountFavorites {
-  accountId: string
-  messages: ChatMessage[] | null
-  error?: boolean
-}
-
 export function AssistantPage() {
   const dispatch = useDispatch<AppDispatch>()
   const { account, messages, sessionId, status, error, pendingMessageId } = useSelector(
     (state: RootState) => state.assistant,
   )
+  const storageKey = favoritesStorageKey(account?.id)
   const [draft, setDraft] = useState('')
-  const [guestFavorites, setGuestFavorites] = useState(loadFavorites)
-  const [guestFavoriteError, setGuestFavoriteError] = useState(false)
-  const [savedFavorites, setSavedFavorites] = useState<AccountFavorites | null>(null)
-  const [favoriteRefresh, setFavoriteRefresh] = useState(0)
-  const [accountReady, setAccountReady] = useState(false)
+  const [savedFavorites, setSavedFavorites] = useState(() => ({ key: storageKey, messages: loadFavorites(storageKey) }))
+  const [favoriteError, setFavoriteError] = useState(false)
   const [accountOpen, setAccountOpen] = useState(false)
   const transcriptRef = useRef<HTMLDivElement>(null)
   const composerRef = useRef<HTMLTextAreaElement>(null)
   const favoritesDialogRef = useRef<HTMLDialogElement>(null)
   const accountDialogRef = useRef<HTMLDialogElement>(null)
-  const favoriteWrites = useRef(new Set<string>())
-  const accountId = account?.id
-  const scopedFavorites = savedFavorites?.accountId === accountId ? savedFavorites : null
-  const favorites = accountId ? scopedFavorites?.messages ?? [] : guestFavorites
-  const favoriteError = accountId ? Boolean(scopedFavorites?.error) : guestFavoriteError
+  const favorites = savedFavorites.key === storageKey ? savedFavorites.messages : []
   const favoriteIds = new Set(favorites.map(({ id }) => id))
   const hasMessages = messages.length > 0
   const isLoading = status === 'loading'
-  const canSend = accountReady && !isLoading && pendingMessageId === null
+  const canSend = !isLoading && pendingMessageId === null
   const audience = messages.findLast((message) => message.role === 'assistant')
     ?.blocks.find((block) => block.type === 'text')?.audience ?? 'unknown'
 
@@ -69,74 +55,43 @@ export function AssistantPage() {
     if (transcript) transcript.scrollTop = transcript.scrollHeight
   }, [messages.length, status])
 
-  useEffect(() => {
-    let controller: AbortController | undefined
-    function refreshSession() {
-      controller?.abort()
-      const connection = new AbortController()
-      controller = connection
-      void currentAccount(connection.signal).then((account) => {
-        if (!connection.signal.aborted) {
-          dispatch(assistantActions.accountChanged({ account, sessionId: crypto.randomUUID() }))
-        }
-      }).catch(() => undefined).finally(() => {
-        if (!connection.signal.aborted) setAccountReady(true)
-      })
-    }
-    function syncFavorites(event: StorageEvent) {
-      if (event.key === favoritesKey || event.key === null) setGuestFavorites(loadFavorites())
-      if (event.key === accountChangeKey) refreshSession()
-    }
-
-    refreshSession()
-    window.addEventListener('storage', syncFavorites)
-    return () => {
-      controller?.abort()
-      window.removeEventListener('storage', syncFavorites)
-    }
+  const changeAccount = useCallback((current: Account | null) => {
+    dispatch(assistantActions.accountChanged({ account: current, sessionId: crypto.randomUUID() }))
+    const key = favoritesStorageKey(current?.id)
+    setSavedFavorites({ key, messages: loadFavorites(key) })
+    setFavoriteError(false)
+    setDraft('')
   }, [dispatch])
 
   useEffect(() => {
-    if (!accountId) return
-    const controller = new AbortController()
-    void accountFavorites(accountId, controller.signal).then((messages) => {
-      if (!controller.signal.aborted) setSavedFavorites({ accountId, messages })
-    }).catch(() => {
-      if (!controller.signal.aborted) setSavedFavorites({ accountId, messages: null, error: true })
-    })
-    return () => controller.abort()
-  }, [accountId, favoriteRefresh])
-
-  async function changeFavorite(message: ChatMessage, shouldSave: boolean) {
-    if (accountId) {
-      const key = `${accountId}/${message.id}`
-      if (favoriteWrites.current.has(key) || !scopedFavorites?.messages) return false
-      favoriteWrites.current.add(key)
-      try {
-        await updateAccountFavorite(accountId, message.id, shouldSave)
-        setSavedFavorites((current) => {
-          if (current?.accountId !== accountId || !current.messages) return current
-          const others = current.messages.filter(({ id }) => id !== message.id)
-          return { accountId, messages: shouldSave ? [snapshotFavorite(message), ...others] : others }
-        })
-        return true
-      } catch {
-        setSavedFavorites((current) => current?.accountId === accountId ? { ...current, error: true } : current)
-        return false
-      } finally {
-        favoriteWrites.current.delete(key)
+    function syncStorage(event: StorageEvent) {
+      if (event.key === accountSessionKey || event.key === null) {
+        changeAccount(currentAccount())
+      } else if (event.key === storageKey) {
+        setSavedFavorites({ key: storageKey, messages: loadFavorites(storageKey) })
       }
     }
-    const others = loadFavorites().filter(({ id }) => id !== message.id)
+    window.addEventListener('storage', syncStorage)
+    return () => window.removeEventListener('storage', syncStorage)
+  }, [changeAccount, storageKey])
+
+  useEffect(() => {
+    if (!account) return
+    const timer = window.setTimeout(() => changeAccount(currentAccount()), Math.max(0, account.expiresAt - Date.now()))
+    return () => window.clearTimeout(timer)
+  }, [account, changeAccount])
+
+  function changeFavorite(message: ChatMessage, shouldSave: boolean) {
+    const others = loadFavorites(storageKey).filter(({ id }) => id !== message.id)
     const updated = shouldSave ? [snapshotFavorite(message), ...others] : others
 
     try {
-      writeFavorites(updated)
-      setGuestFavorites(updated)
-      setGuestFavoriteError(false)
+      writeFavorites(updated, storageKey)
+      setSavedFavorites({ key: storageKey, messages: updated })
+      setFavoriteError(false)
       return true
     } catch {
-      setGuestFavoriteError(true)
+      setFavoriteError(true)
       return false
     }
   }
@@ -183,17 +138,6 @@ export function AssistantPage() {
     focusComposerOnDesktop()
   }
 
-  function changeAccount(current: Account | null) {
-    dispatch(assistantActions.accountChanged({ account: current, sessionId: crypto.randomUUID() }))
-    setSavedFavorites(null)
-    setDraft('')
-    try {
-      localStorage.setItem(accountChangeKey, crypto.randomUUID())
-    } catch {
-      // The session cookie still works when browser storage is disabled.
-    }
-  }
-
   function restoreChat(owner: string, chatId: string, messages: ChatMessage[]) {
     const sessionId = crypto.randomUUID()
     dispatch(assistantActions.restoreChat({ accountId: owner, sessionId, chatId, messages }))
@@ -206,12 +150,8 @@ export function AssistantPage() {
       <ProjectHeader
         profileLabel={audienceLabels[audience]}
         signedIn={Boolean(account)}
-        accountReady={accountReady}
         onNewChat={startNewSession}
-        onOpenFavorites={() => {
-          if (accountId && scopedFavorites?.error && !scopedFavorites.messages) setFavoriteRefresh((previous) => previous + 1)
-          favoritesDialogRef.current?.showModal()
-        }}
+        onOpenFavorites={() => favoritesDialogRef.current?.showModal()}
         onOpenAccount={() => {
           accountDialogRef.current?.showModal()
           setAccountOpen(true)
@@ -232,8 +172,8 @@ export function AssistantPage() {
                   onFollowUp={submitPrompt}
                   isLoading={!canSend}
                   isFavorite={favoriteIds.has(message.id)}
-                  onToggleFavorite={canSaveFavorite(message) && (!accountId || scopedFavorites?.messages)
-                    ? () => { void changeFavorite(message, !favoriteIds.has(message.id)) }
+                  onToggleFavorite={canSaveFavorite(message)
+                    ? () => { changeFavorite(message, !favoriteIds.has(message.id)) }
                     : undefined}
                 />
               ))}
@@ -303,7 +243,6 @@ export function AssistantPage() {
         dialogRef={favoritesDialogRef}
         favorites={favorites}
         hasError={favoriteError}
-        isLoading={Boolean(accountId && !scopedFavorites)}
         onRemove={(message) => changeFavorite(message, false)}
       />
       <AccountDialog

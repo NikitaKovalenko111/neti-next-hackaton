@@ -1,21 +1,10 @@
-CREATE TABLE accounts (
+CREATE TABLE users (
     id UUID PRIMARY KEY,
-    username TEXT NOT NULL UNIQUE,
-    password_hash BYTEA NOT NULL
+    login TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE account_sessions (
-    token_hash BYTEA PRIMARY KEY,
-    account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    expires_at TIMESTAMPTZ NOT NULL
-);
-CREATE INDEX account_sessions_expires_idx ON account_sessions (expires_at);
-
-CREATE TABLE account_favorites (
-    account_id UUID NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
-    message_id UUID NOT NULL REFERENCES messages(id) ON DELETE CASCADE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (account_id, message_id)
-);
-
-CREATE INDEX chats_user_id_idx ON chats (user_id);
+ALTER TABLE chats ADD COLUMN guest_expires_at TIMESTAMPTZ DEFAULT (now() + interval '24 hours');
+CREATE INDEX chats_account_history_idx ON chats (user_id, created_at DESC, id)
+    WHERE guest_expires_at IS NULL;

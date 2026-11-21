@@ -1,14 +1,11 @@
 import re
-from typing import get_args
 from urllib.parse import urlsplit
 from uuid import uuid4
 
 from pydantic import ValidationError
 
-from app.models import Attachment, Audience, MapPoint, MapPointID, UserAnswer
+from app.models import Attachment, MapPoint, UserAnswer
 
-ADMISSION_GUIDE = "https://uust.ru/admission/"
-STUDENT_SERVICES = "https://uust.ru/digital-services/"
 HISTORY_SUMMARY_LIMIT = 2400
 
 ANSWER_FORMAT = {
@@ -21,19 +18,10 @@ ANSWER_FORMAT = {
             "properties": {
                 "message": {"type": "string"},
                 "source": {"type": "array", "items": {"type": "string"}},
-                "audience": {"type": "string", "enum": list(get_args(Audience))},
-                "map_point": {"type": "string", "enum": list(get_args(MapPointID))},
                 "photo_ids": {"type": "array", "items": {"type": "string"}},
                 "map_place_ids": {"type": "array", "items": {"type": "string"}},
             },
-            "required": [
-                "message",
-                "source",
-                "audience",
-                "map_point",
-                "photo_ids",
-                "map_place_ids",
-            ],
+            "required": ["message", "source", "photo_ids", "map_place_ids"],
             "additionalProperties": False,
         },
     },
@@ -41,7 +29,6 @@ ANSWER_FORMAT = {
 
 
 def answer_format_with_history() -> dict:
-    schema = ANSWER_FORMAT["json_schema"]["schema"]
     return {
         "type": "json_schema",
         "json_schema": {
@@ -50,10 +37,13 @@ def answer_format_with_history() -> dict:
             "schema": {
                 "type": "object",
                 "properties": {
-                    **schema["properties"],
+                    **ANSWER_FORMAT["json_schema"]["schema"]["properties"],
                     "history_summary": {"type": "string"},
                 },
-                "required": [*schema["required"], "history_summary"],
+                "required": [
+                    *ANSWER_FORMAT["json_schema"]["schema"]["required"],
+                    "history_summary",
+                ],
                 "additionalProperties": False,
             },
         },
@@ -153,13 +143,11 @@ def collect_map_points(result: dict) -> dict[str, MapPoint]:
         data = row.get("data")
         if not isinstance(data, dict):
             continue
-        address = data.get("address")
         try:
             point = MapPoint(
                 title=row.get("title"),
                 latitude=data.get("latitude"),
                 longitude=data.get("longitude"),
-                address=address if isinstance(address, str) and address.strip() else None,
             )
         except ValidationError:
             continue
@@ -226,8 +214,6 @@ def sanitize_user_answer(
     return UserAnswer(
         message=message,
         source=list(cited),
-        audience=answer.audience,
-        map_point=answer.map_point,
         photos=[allowed_photos[i] for i in dict.fromkeys(answer.photo_ids) if i in allowed_photos],
         history_summary=answer.history_summary.strip()[:HISTORY_SUMMARY_LIMIT],
     )

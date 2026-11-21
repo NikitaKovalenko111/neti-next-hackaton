@@ -34,7 +34,7 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
   const question = state.messages.at(-1)?.blocks[0]
   if (state.sessionId !== action.payload || question?.type !== 'text') return
 
-  const userId = state.account?.id ?? state.sessionId
+  const identity = { guestId: state.sessionId, accountId: state.account?.id }
   const controller = new AbortController()
   let request = state.chatId && state.pendingMessageId
     ? { chatId: state.chatId, messageId: state.pendingMessageId }
@@ -43,7 +43,7 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
   try {
     // Once the backend accepted a question, retries recover its answer without posting it twice.
     for (let attempt = 0; ; attempt++) {
-      const socket: EventChannel<ChatSocketEvent> = yield call(openChatSocket, userId)
+      const socket: EventChannel<ChatSocketEvent> = yield call(openChatSocket, identity)
       try {
         const { event }: { event?: ChatSocketEvent } = yield race({
           event: take(socket),
@@ -52,14 +52,14 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
         if (event?.type !== 'ready') throw new ConnectionLost()
 
         if (request) {
-          const answer: ChatMessage | undefined = yield call(recoverAnswer, userId, request, controller.signal)
+          const answer: ChatMessage | undefined = yield call(recoverAnswer, identity, request, controller.signal)
           if (answer) {
             yield put(assistantActions.answerReceived(answer))
             return
           }
         } else {
           const accepted: AcceptedRequest = yield call(
-            sendAssistantMessage, userId, state.chatId, question.message, controller.signal,
+            sendAssistantMessage, identity, state.chatId, question.message, controller.signal,
           )
           request = accepted
           yield put(assistantActions.requestAccepted(accepted))
@@ -81,6 +81,10 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
       yield delay(500 * (attempt + 1))
     }
   } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404 && !state.account && state.chatId) {
+      yield put(assistantActions.requestFailed('Гостевой диалог недоступен. Начните новый диалог.'))
+      return
+    }
     const message = error instanceof Error && !axios.isAxiosError(error)
       ? error.message
       : 'Не удалось обработать запрос. Проверьте подключение и повторите попытку.'

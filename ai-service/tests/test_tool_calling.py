@@ -2,7 +2,6 @@ import json
 from unittest.mock import AsyncMock, call
 
 import httpx
-import pytest
 
 from app.clients.openrouter import OpenRouterClient
 from app.models import ConversationContext, ConversationTurn
@@ -22,13 +21,8 @@ def reply(**message):
     return httpx.Response(200, json={"choices": [{"message": {"role": "assistant", **message}}]})
 
 
-def final_reply(text, source=(), audience="unknown"):
-    return reply(
-        content=json.dumps(
-            {"message": text, "source": list(source), "audience": audience, "map_point": "none"}
-        )
-        + "<|endoftext|>"
-    )
+def final_reply(text, source=()):
+    return reply(content=json.dumps({"message": text, "source": list(source)}) + "<|endoftext|>")
 
 
 async def test_agent_returns_answer_after_two_tool_rounds(settings, request_message):
@@ -74,9 +68,6 @@ async def test_agent_returns_answer_after_two_tool_rounds(settings, request_mess
         if len(calls) == 4:
             assert payload["response_format"]["type"] == "json_schema"
             assert payload["tool_choice"] == "none"
-            assert payload["messages"][-2]["role"] == "tool"
-            schema = payload["response_format"]["json_schema"]["schema"]
-            assert schema["properties"]["audience"]["enum"] == ["unknown", "applicant", "student"]
             return final_reply(
                 "Срок по этому основанию — 6 месяцев. (status: official_address_confirmed)"
                 "\n\nИсточник: https://uust.ru/policy/",
@@ -85,7 +76,6 @@ async def test_agent_returns_answer_after_two_tool_rounds(settings, request_mess
                     "https://uust.ru/policy/",
                     "https://example.com/invented",
                 ],
-                audience="student",
             )
         results = payload["messages"][-2:]
         assert [result["tool_call_id"] for result in results] == [
@@ -105,7 +95,6 @@ async def test_agent_returns_answer_after_two_tool_rounds(settings, request_mess
         response = await agent.process(request_message)
         assert response.blocks[0].message == "Срок по этому основанию — 6 месяцев."
         assert response.blocks[0].source == ["https://uust.ru/policy/"]
-        assert response.blocks[0].audience == "student"
         assert await agent.process(request_message) == response
 
     assert len(calls) == 4
@@ -124,23 +113,6 @@ async def test_model_can_answer_without_querying_postgres(settings):
     ) as client:
         agent = ToolCallingAgent(OpenRouterClient(client, settings), execute)
         assert (await agent.generate("system", "Здравствуйте")).message == "Здравствуйте!"
-    execute.assert_not_awaited()
-
-
-async def test_agent_retries_a_malformed_final_answer():
-    model = AsyncMock()
-    model.chat.side_effect = [
-        {"content": "Draft text"},
-        {"content": '{"message":'},
-        final_reply("Здравствуйте!").json()["choices"][0]["message"],
-    ]
-    execute = AsyncMock()
-
-    answer = await ToolCallingAgent(model, execute).generate("system", "Привет!")
-
-    assert answer.message == "Здравствуйте!"
-    assert model.chat.await_count == 3
-    assert all(message["role"] != "assistant" for message in model.chat.await_args.args[0])
     execute.assert_not_awaited()
 
 
@@ -328,12 +300,7 @@ async def test_conversation_context_and_annotation_cross_queue_boundary(settings
 
 async def test_agent_serializes_map_points_from_the_lookup(settings, request_message):
     request_message.message = "Покажи главный корпус УУНиТ на карте"
-    main_building = {
-        "title": "Главный корпус",
-        "latitude": 54.720714,
-        "longitude": 55.933422,
-        "address": "Уфа, ул. Заки Валиди, 32",
-    }
+    main_building = {"title": "Главный корпус", "latitude": 54.720714, "longitude": 55.933422}
     execute = AsyncMock(
         return_value={
             "status": "ok",
@@ -373,44 +340,8 @@ async def test_agent_serializes_map_points_from_the_lookup(settings, request_mes
         agent = AgentService(ToolCallingAgent(OpenRouterClient(client, settings), execute))
         result = await agent.process(request_message)
 
-    assert result.model_dump(mode="json", exclude_none=True)["blocks"][1:] == [
+    assert result.model_dump(mode="json")["blocks"][1:] == [
         {"type": "map", "points": [main_building]}
-    ]
-
-
-@pytest.mark.parametrize(
-    "final_content",
-    [json.dumps({"message": "Вот общежития.", "map_place_ids": ["dorm1"]}), "{invalid"],
-)
-async def test_map_of_all_dorms_keeps_every_lookup_point(request_message, final_content):
-    request_message.message = "Дай карту всех общежитий УУНиТ в Уфе"
-    points = [
-        {"title": "Общежитие №1", "latitude": 54.736269, "longitude": 55.971939},
-        {"title": "Общежитие №2", "latitude": 54.736166, "longitude": 55.972741},
-    ]
-    lookup = tool_call("find_campus_details", purpose="map", kind="dormitory", branch_id="ufa")
-    model = AsyncMock()
-    model.chat.side_effect = [
-        {"tool_calls": [lookup]},
-        {"content": "На карте отмечены общежития Уфы."},
-        {"content": final_content},
-        {"content": final_content},
-    ]
-    execute = AsyncMock(
-        return_value={
-            "status": "ok",
-            "data": [
-                {"id": f"dorm{index}", "title": point["title"], "data": point}
-                for index, point in enumerate(points, 1)
-            ],
-        }
-    )
-
-    service = AgentService(ToolCallingAgent(model, execute))
-    result = await service.process(request_message)
-
-    assert result.model_dump(mode="json", exclude_none=True)["blocks"][1:] == [
-        {"type": "map", "points": points}
     ]
 
 

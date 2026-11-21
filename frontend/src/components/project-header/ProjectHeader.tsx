@@ -4,10 +4,9 @@ import { UniversityMark } from './UniversityMark'
 
 export const universityUrl = 'https://uust.ru/'
 
-export function ProjectHeader({ profileLabel, signedIn, accountReady, onNewChat, onOpenFavorites, onOpenAccount }: {
+export function ProjectHeader({ profileLabel, signedIn, onNewChat, onOpenFavorites, onOpenAccount }: {
   profileLabel: string
   signedIn: boolean
-  accountReady: boolean
   onNewChat: () => void
   onOpenFavorites: () => void
   onOpenAccount: () => void
@@ -35,7 +34,7 @@ export function ProjectHeader({ profileLabel, signedIn, accountReady, onNewChat,
             <AssistantIcon name="star" />
             Избранное
           </button>
-          <button aria-haspopup="dialog" className="favorites-button account-button" disabled={!accountReady} onClick={onOpenAccount} type="button">
+          <button aria-haspopup="dialog" className="favorites-button account-button" onClick={onOpenAccount} type="button">
             <AssistantIcon name="user" />
             {signedIn ? 'Аккаунт' : 'Войти'}
           </button>

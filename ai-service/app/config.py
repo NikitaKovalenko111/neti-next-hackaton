@@ -29,18 +29,8 @@ class Settings(BaseSettings):
     openrouter_timeout_seconds: float = Field(default=180, gt=0)
     openrouter_max_tokens: int = Field(default=1024, gt=0)
 
-    ollama_base_url: HttpUrl | None = None
-    ollama_model: str = Field(default="llama3.2:3b", min_length=1)
-    ollama_embedding_model: str = Field(default="qwen3-embedding:0.6b", min_length=1)
-
     retry_delay_seconds: float = Field(default=5, gt=0)
     response_cache_size: int = Field(default=128, ge=1)
-
-    @property
-    def embedding_model(self) -> str:
-        if self.ollama_base_url:
-            return self.ollama_embedding_model
-        return self.openrouter_embedding_model
 
     @model_validator(mode="after")
     def distinct_queues(self) -> "Settings":

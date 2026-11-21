@@ -4,8 +4,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field, StringConstraints, field_validator, model_validator
 
 NonEmptyText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
-Audience = Literal["unknown", "applicant", "student"]
-MapPointID = Literal["none", "uust_main_building"]
 
 
 class Attachment(BaseModel):
@@ -14,11 +12,6 @@ class Attachment(BaseModel):
     object_key: NonEmptyText
     filename: NonEmptyText
     content_type: NonEmptyText
-
-
-class DialogueTurn(BaseModel):
-    role: Literal["user", "assistant"]
-    message: NonEmptyText
 
 
 class ConversationTurn(BaseModel):
@@ -38,7 +31,6 @@ class AgentRequest(BaseModel):
     user_id: UUID
     message: str = ""
     attachments: list[Attachment] = Field(default_factory=list)
-    history: list[DialogueTurn] = Field(default_factory=list, max_length=8)
     conversation: ConversationContext | None = None
 
     @field_validator("message_id", "chat_id", "user_id")
@@ -60,18 +52,15 @@ class AgentRequest(BaseModel):
 class AnswerText(BaseModel):
     message: NonEmptyText
     source: list[str] = Field(default_factory=list)
-    audience: Audience = "unknown"
 
 
 class MapPoint(BaseModel):
     title: NonEmptyText
     latitude: float = Field(strict=True, ge=-90, le=90)
     longitude: float = Field(strict=True, ge=-180, le=180)
-    address: NonEmptyText | None = None
 
 
 class UserAnswer(AnswerText):
-    map_point: MapPointID = "none"
     history_summary: str = ""
     photo_ids: list[str] = Field(default_factory=list)
     photos: list[Attachment] = Field(default_factory=list)

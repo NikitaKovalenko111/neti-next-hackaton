@@ -14,7 +14,8 @@ export default defineConfig(({ mode }) => {
       proxy: {
         '/request': proxy,
         '/chats': proxy,
-        '/account': proxy,
+        '/register': proxy,
+        '/login': proxy,
         '/health': proxy,
         '/ws': { ...proxy, ws: true },
       },

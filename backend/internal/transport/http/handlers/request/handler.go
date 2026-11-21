@@ -9,7 +9,7 @@ import (
 	"net/http"
 
 	service "university-agent/internal/services/request"
-	"university-agent/internal/transport/http/identity"
+	"university-agent/internal/transport/http/handlers/auth"
 )
 
 const maxRequestSize = 32 << 20
@@ -18,27 +18,30 @@ type Creator interface {
 	Create(context.Context, service.Input) (service.Result, error)
 }
 
-type Handler struct {
-	Service     Creator
-	ResolveUser identity.Resolver
+type Handler struct{ Service Creator }
+
+func (h *Handler) WithIdentity(identity auth.Handler) http.Handler {
+	handle := identity.Resolve(http.HandlerFunc(h.create), func(r *http.Request) string {
+		return r.FormValue("user_id")
+	}, false)
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, maxRequestSize)
+		if err := r.ParseMultipartForm(8 << 20); err != nil {
+			http.Error(w, "invalid or oversized multipart form", http.StatusBadRequest)
+			return
+		}
+		defer r.MultipartForm.RemoveAll()
+		handle.ServeHTTP(w, r)
+	})
 }
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, maxRequestSize)
-	if err := r.ParseMultipartForm(8 << 20); err != nil {
-		http.Error(w, "invalid or oversized multipart form", http.StatusBadRequest)
-		return
-	}
-	defer r.MultipartForm.RemoveAll()
-
-	principal, ok := h.ResolveUser(w, r, r.FormValue("user_id"))
-	if !ok {
-		return
-	}
+func (h *Handler) create(w http.ResponseWriter, r *http.Request) {
+	identity := auth.FromContext(r.Context())
 	input := service.Input{
-		UserID:  principal.ID.String(),
-		ChatID:  r.FormValue("chat_id"),
-		Message: r.FormValue("message"),
+		UserID:     identity.UserID.String(),
+		Registered: identity.Registered(),
+		ChatID:     r.FormValue("chat_id"),
+		Message:    r.FormValue("message"),
 	}
 
 	for _, file := range r.MultipartForm.File["attachments"] {
