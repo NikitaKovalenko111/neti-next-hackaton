@@ -4,7 +4,17 @@
 
 Сценарий взят из базового университетского кейса трека ML Product и адаптирован для УУНиТ. [Описание кейса](https://docs.google.com/document/d/1abM0XMALBRC0ESZaYuCnDU85l00msq9RZelh9iXKuY4/edit) · [Официальный сайт УУНиТ](https://uust.ru/)
 
-## Запуск
+## Запуск в Docker
+
+Из корня репозитория выполните `docker compose up --build -d` и откройте
+`http://localhost:5138`. Порт задаёт `FRONTEND_PORT` в корневом `.env`.
+Nginx обслуживает сборку React, проксирует HTTP и WebSocket к Go-бэкенду и передаёт
+запросы по подписанным ссылкам к бакету MinIO. [Общая настройка](../README.md#общий-запуск)
+
+При рассинхронизации `package-lock.json` сборка выводит предупреждение и обновляет
+копию lock-файла внутри образа перед повторным `npm ci`.
+
+## Локальная разработка
 
 ```powershell
 cd frontend
