@@ -1,5 +1,7 @@
 # University AI agent
 
+Для раздельного запуска Go на VPS и AI-воркера в Colab используйте [ноутбук и инструкцию](deploy/colab/README.md).
+
 ## Общий запуск
 
 Из корня репозитория:
@@ -7,10 +9,10 @@
 ```sh
 cp .env.example .env
 docker compose up --build -d
-docker compose logs -f ollama-init ai-service backend
+docker compose logs -f ollama-init rag-index ai-service backend
 ```
 
-Общий `docker-compose.yml` поднимает backend, ai-service, PostgreSQL, RabbitMQ, MinIO и Ollama в одной сети. Отдельный `ollama-init` скачивает `qwen3:4b`; AI-сервис запускается после завершения загрузки. `postgres-init` готовит схемы и роли базы данных. Backend ждёт его завершения, готовности RabbitMQ и MinIO и автоматически применяет миграции. До готовности модели запросы могут накапливаться в очереди.
+Общий `docker-compose.yml` поднимает backend, ai-service, PostgreSQL, RabbitMQ, MinIO и Ollama в одной сети. AI-сервис запускается после загрузки моделей Ollama и завершения `rag-index`. Агент обращается к справочникам через инструменты PostgreSQL и pgvector. `postgres-init` готовит схемы и роли базы данных. Backend ждёт его завершения, готовности RabbitMQ и MinIO и автоматически применяет миграции. До готовности модели запросы могут накапливаться в очереди.
 
 Первый запуск требует сборки образов и загрузки модели. По умолчанию Ollama использует CPU. Frontend пока отсутствует в репозитории и в общий Compose не включён.
 
@@ -41,9 +43,9 @@ MinIO собирается из закреплённого исходного р
 | Схема | Роль | Назначение |
 | --- | --- | --- |
 | `backend` | `BACKEND_POSTGRES_USER` (по умолчанию `backend_app`) | Чаты, сообщения, вложения, outbox и журнал миграций Go |
-| `rag` | `RAG_POSTGRES_USER` (по умолчанию `rag_app`) | Будущие RAG-данные |
+| `rag` | `RAG_POSTGRES_USER` (по умолчанию `rag_app`) | Справочник кампуса и векторный поиск |
 
-Роли имеют права на свои схемы и не могут читать или изменять другую схему. Создание таблиц в `public` запрещено. Администратор остаётся отдельной ролью для обслуживания. В `rag` активируется расширение `vector` (pgvector), но таблиц пока нет; AI-сервис ещё не подключается к PostgreSQL.
+Роли имеют права на свои схемы и не могут читать или изменять другую схему. Создание таблиц в `public` запрещено. Администратор остаётся отдельной ролью для обслуживания. В `rag` активируется расширение `vector` (pgvector). Задача `rag-index` импортирует справочник из `all.json` и загружает эмбеддинги. [Запуск импорта и поиска](ai-service/README.md#справочник-кампуса).
 
 Пример подключения RAG-процесса с хоста: `postgres://rag_app:rag_app@localhost:5433/university?sslmode=disable&search_path=rag`. Из сети Compose вместо `localhost:5433` используется `postgres:5432`. Пароли задаются через `BACKEND_POSTGRES_PASSWORD` и `RAG_POSTGRES_PASSWORD`.
 

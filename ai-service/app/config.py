@@ -9,11 +9,18 @@ class Settings(BaseSettings):
     rabbitmq_queue: str = Field(default="agent_requests", min_length=1)
     rabbitmq_response_queue: str = Field(default="agent_responses", min_length=1)
 
+    rag_postgres_host: str = "localhost"
+    rag_postgres_port: int = Field(default=5433, ge=1, le=65535)
+    rag_postgres_db: str = "university"
+    rag_postgres_user: str = "rag_app"
+    rag_postgres_password: SecretStr = SecretStr("rag_app")
+
+    ollama_embedding_model: str = Field(default="qwen3-embedding:0.6b", min_length=1)
     ollama_base_url: HttpUrl = HttpUrl("http://localhost:11434")
     ollama_model: str = Field(default="qwen3:4b", min_length=1)
     ollama_timeout_seconds: float = Field(default=180, gt=0)
     ollama_num_predict: int = Field(default=512, gt=0)
-    ollama_num_ctx: int = Field(default=4096, gt=0)
+    ollama_num_ctx: int = Field(default=8192, gt=0)
 
     retry_delay_seconds: float = Field(default=5, gt=0)
     response_cache_size: int = Field(default=128, ge=1)

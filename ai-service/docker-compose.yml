@@ -1,4 +1,28 @@
 services:
+  postgres:
+    extends:
+      file: ../docker-compose.yml
+      service: postgres
+
+  postgres-init:
+    extends:
+      file: ../docker-compose.yml
+      service: postgres-init
+    volumes:
+      - ../deploy/postgres:/opt/postgres:ro
+
+  ollama-embedding-init:
+    extends:
+      file: ../docker-compose.yml
+      service: ollama-embedding-init
+
+  rag-index:
+    extends:
+      file: ../docker-compose.yml
+      service: rag-index
+    build:
+      context: .
+
   rabbitmq:
     image: rabbitmq:3-management
     environment:
@@ -46,7 +70,14 @@ services:
       RABBITMQ_URL: amqp://university:university@rabbitmq:5672/
       RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-agent_requests}
       RABBITMQ_RESPONSE_QUEUE: ${RABBITMQ_RESPONSE_QUEUE:-agent_responses}
+      RAG_POSTGRES_HOST: postgres
+      RAG_POSTGRES_PORT: 5432
+      RAG_POSTGRES_DB: ${POSTGRES_DB:-university}
+      RAG_POSTGRES_USER: ${RAG_POSTGRES_USER:-rag_app}
+      RAG_POSTGRES_PASSWORD: ${RAG_POSTGRES_PASSWORD:-rag_app}
       OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
       OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-180}
     depends_on:
@@ -54,7 +85,10 @@ services:
         condition: service_healthy
       ollama-init:
         condition: service_completed_successfully
+      rag-index:
+        condition: service_completed_successfully
 
 volumes:
+  postgres_data:
   rabbitmq_data:
   ollama_data:

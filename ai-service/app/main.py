@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from app.clients.ollama import OllamaClient
 from app.config import Settings
 from app.services.agent import AgentService
+from app.services.tool_calling import DatabaseTools, ToolCallingAgent
 from app.transport.rabbitmq import RabbitWorker
 
 
@@ -19,7 +20,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             base_url=str(config.ollama_base_url), timeout=config.ollama_timeout_seconds
         ) as client:
             model = OllamaClient(client, config)
-            service = AgentService(model, config.response_cache_size)
+            agent = ToolCallingAgent(model, DatabaseTools(config, client))
+            service = AgentService(agent, config.response_cache_size)
             worker = RabbitWorker(config, service)
             app.state.worker = worker
             app.state.model = model

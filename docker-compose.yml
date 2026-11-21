@@ -5,6 +5,14 @@ x-rabbitmq-environment: &rabbitmq-environment
   RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-agent_requests}
   RABBITMQ_RESPONSE_QUEUE: ${RABBITMQ_RESPONSE_QUEUE:-agent_responses}
 
+x-rag-environment: &rag-environment
+  RAG_POSTGRES_HOST: postgres
+  RAG_POSTGRES_PORT: 5432
+  RAG_POSTGRES_DB: ${POSTGRES_DB:-university}
+  RAG_POSTGRES_USER: ${RAG_POSTGRES_USER:-rag_app}
+  RAG_POSTGRES_PASSWORD: ${RAG_POSTGRES_PASSWORD:-rag_app}
+  OLLAMA_EMBEDDING_MODEL: ${OLLAMA_EMBEDDING_MODEL:-qwen3-embedding:0.6b}
+
 services:
   postgres:
     image: pgvector/pgvector:0.8.7-pg16
@@ -101,6 +109,30 @@ services:
       ollama:
         condition: service_healthy
 
+  ollama-embedding-init:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    entrypoint: ["ollama"]
+    command: ["pull", "${OLLAMA_EMBEDDING_MODEL:-qwen3-embedding:0.6b}"]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+  rag-index:
+    build:
+      context: ./ai-service
+    command: ["python", "-m", "app.index_campus"]
+    environment:
+      <<: *rag-environment
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-180}
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+      ollama-embedding-init:
+        condition: service_completed_successfully
+
   backend:
     build:
       context: ./backend
@@ -140,12 +172,12 @@ services:
     restart: unless-stopped
     init: true
     environment:
-      <<: *rabbitmq-environment
+      <<: [*rabbitmq-environment, *rag-environment]
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:4b}
       OLLAMA_TIMEOUT_SECONDS: ${OLLAMA_TIMEOUT_SECONDS:-180}
       OLLAMA_NUM_PREDICT: ${OLLAMA_NUM_PREDICT:-512}
-      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-4096}
+      OLLAMA_NUM_CTX: ${OLLAMA_NUM_CTX:-8192}
       RETRY_DELAY_SECONDS: ${RETRY_DELAY_SECONDS:-5}
       RESPONSE_CACHE_SIZE: ${RESPONSE_CACHE_SIZE:-128}
     ports:
@@ -154,6 +186,8 @@ services:
       rabbitmq:
         condition: service_healthy
       ollama-init:
+        condition: service_completed_successfully
+      rag-index:
         condition: service_completed_successfully
 
 volumes:
