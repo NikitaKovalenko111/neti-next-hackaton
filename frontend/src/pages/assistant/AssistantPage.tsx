@@ -42,6 +42,14 @@ export function AssistantPage() {
     if (transcript) transcript.scrollTop = transcript.scrollHeight
   }, [messages.length, status])
 
+  function focusComposerOnDesktop() {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+      composerRef.current?.blur()
+    } else {
+      composerRef.current?.focus({ preventScroll: true })
+    }
+  }
+
   function submitPrompt(value: string) {
     const content = value.trim()
     if (!content || !canSend) return
@@ -55,7 +63,7 @@ export function AssistantPage() {
     )
     dispatch(requestAnswer(sessionId))
     setDraft('')
-    composerRef.current?.focus({ preventScroll: true })
+    focusComposerOnDesktop()
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -73,13 +81,13 @@ export function AssistantPage() {
   function startNewSession() {
     dispatch(assistantActions.startNewSession(crypto.randomUUID()))
     setDraft('')
-    composerRef.current?.focus({ preventScroll: true })
+    focusComposerOnDesktop()
   }
 
   return (
     <div className="assistant-app">
       <ProjectHeader profileLabel={audienceLabels[audience]} onNewChat={startNewSession} />
-      <main className="assistant-main">
+      <main className={hasMessages ? 'assistant-main' : 'assistant-main assistant-main--welcome'}>
         <div
           className="assistant-content"
           key={hasMessages ? 'conversation' : 'welcome'}
@@ -111,15 +119,6 @@ export function AssistantPage() {
                 </div>
                 <CampusArt />
               </section>
-
-              <section className="prompt-grid" aria-label="Готовые вопросы">
-                {prompts.map(({ label, question, icon }) => (
-                  <button className="prompt-card" key={label} onClick={() => submitPrompt(question)} type="button">
-                    <AssistantIcon name={icon} />
-                    <span>{label}</span>
-                  </button>
-                ))}
-              </section>
             </div>
           )}
         </div>
@@ -137,16 +136,28 @@ export function AssistantPage() {
             <textarea
               ref={composerRef}
               aria-label="Ваш вопрос"
+              enterKeyHint="send"
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Задайте вопрос об УУНиТ"
               rows={1}
               value={draft}
             />
-            <button className="send-button" disabled={!draft.trim() || !canSend} type="submit">
-              Отправить
+            <button aria-label="Отправить" className="send-button" disabled={!draft.trim() || !canSend} type="submit">
+              <span>Отправить</span>
+              <AssistantIcon name="send" />
             </button>
           </form>
+          {!hasMessages && (
+            <section className="prompt-grid" aria-label="Готовые вопросы">
+              {prompts.map(({ label, question, icon }) => (
+                <button className="prompt-card" key={label} onClick={() => submitPrompt(question)} type="button">
+                  <AssistantIcon name={icon} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </section>
+          )}
           <nav aria-label="Полезные ссылки УУНиТ" className="welcome-links">
             <a href={universityUrl + 'admission/'} target="_blank" rel="noreferrer">Приёмная комиссия</a>
             <a href={universityUrl + 'digital-services/'} target="_blank" rel="noreferrer">Сервисы УУНиТ</a>

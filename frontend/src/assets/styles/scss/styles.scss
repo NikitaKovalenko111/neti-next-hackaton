@@ -236,6 +236,14 @@ button:enabled {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
   min-width: 0;
+  min-height: 0;
+}
+
+.assistant-main--welcome {
+  grid-template-rows: auto auto;
+  align-content: start;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .assistant-content {
@@ -244,8 +252,12 @@ button:enabled {
   overscroll-behavior: contain;
 }
 
+.assistant-main--welcome .assistant-content {
+  overflow: visible;
+}
+
 .welcome-panel {
-  padding-block: clamp(1.75rem, 6.3vh, 4.75rem) 1.75rem;
+  padding-block: clamp(1.75rem, 6.3vh, 4.75rem) clamp(1rem, 3vh, 1.75rem);
 }
 
 .welcome-hero {
@@ -315,24 +327,23 @@ button:enabled {
 }
 
 .prompt-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(.55rem, 2vw, 1rem);
-  margin-top: clamp(1.35rem, 4.3vh, 3rem);
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .7rem;
 }
 
 .prompt-card {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: clamp(.48rem, 1.5vw, .95rem);
-  min-height: clamp(3.4rem, 6.6vh, 4.25rem);
-  padding: .6rem .4rem;
-  border: 0;
-  border-radius: .9rem;
+  gap: .5rem;
+  min-height: 2.5rem;
+  padding: .42rem .78rem;
+  border: 1px solid var(--line);
+  border-radius: .65rem;
   background: var(--soft);
-  font-size: clamp(.92rem, 2.55vw, 1.23rem);
-  font-weight: 800;
+  font-size: .88rem;
+  font-weight: 700;
   line-height: 1.16;
   letter-spacing: -.025em;
 }
@@ -343,26 +354,32 @@ button:enabled {
 }
 
 .prompt-card .assistant-icon {
-  width: clamp(1.25rem, 3.9vw, 2rem);
-  height: clamp(1.25rem, 3.9vw, 2rem);
+  width: 1.15rem;
+  height: 1.15rem;
 }
 
 .composer-area {
   padding-block: clamp(.55rem, 2vh, 1.25rem) max(clamp(1rem, 2.6vh, 1.7rem), env(safe-area-inset-bottom));
 }
 
+.assistant-main--welcome .composer-area {
+  padding-block-start: 0;
+}
+
 .composer {
+  --composer-control-height: clamp(3.15rem, 5.65vh, 3.75rem);
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: stretch;
+  align-items: end;
   gap: clamp(.55rem, 1.85vw, 1rem);
 }
 
 .composer textarea {
   width: 100%;
-  min-height: clamp(3.15rem, 5.65vh, 3.75rem);
+  min-height: var(--composer-control-height);
   max-height: min(28dvh, 10rem);
-  padding: .85rem clamp(.67rem, 2.5vw, 1.25rem);
+  padding-block: max(.65rem, calc((var(--composer-control-height) - 1.35em - 2px) / 2));
+  padding-inline: clamp(.67rem, 2.5vw, 1.25rem);
   resize: none;
   field-sizing: content;
   border: 1px solid var(--input-line);
@@ -385,8 +402,13 @@ button:enabled {
 
 .send-button {
   min-width: 0;
+  min-height: var(--composer-control-height);
   padding: .6rem clamp(.72rem, 3vw, 1.5rem);
   font-size: clamp(.85rem, 2.6vw, 1.2rem);
+}
+
+.send-button .assistant-icon {
+  display: none;
 }
 
 .send-button:disabled {
@@ -740,18 +762,20 @@ button:enabled {
 @media (max-width: 36rem) {
   .topbar-inner {
     grid-template-columns: auto minmax(0, 1fr) auto;
-    padding-block: .55rem .5rem;
-    gap: .25rem .65rem;
+    padding-block: .55rem .63rem;
+    gap: .35rem .5rem;
   }
 
   .brand {
     gap: .35rem;
-    padding-inline-end: .65rem;
+    padding-inline-end: .5rem;
+    font-size: clamp(1.125rem, 5vw, 1.55rem);
   }
 
   .theme-toggle {
     grid-column: 3;
     grid-row: 1;
+    background: var(--soft);
   }
 
   .theme-toggle::before {
@@ -760,6 +784,8 @@ button:enabled {
 
   .new-chat-button {
     justify-self: start;
+    padding-inline: clamp(.48rem, 2.2vw, .82rem);
+    font-size: clamp(.76rem, 3.5vw, .95rem);
   }
 
   .profile-status {
@@ -794,31 +820,64 @@ button:enabled {
     justify-self: center;
     width: 100%;
     aspect-ratio: 1.8;
+    border-radius: max(.7rem, var(--art-radius));
   }
 
   .prompt-grid {
-    margin-top: .95rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .38rem;
   }
 
   .prompt-card {
-    flex-direction: column;
-    gap: .38rem;
-    font-size: clamp(.72rem, 3.3vw, .92rem);
-    text-align: center;
+    min-height: 2.75rem;
+    text-align: start;
+  }
+
+  .composer textarea {
+    font-size: 1rem;
+  }
+
+  .send-button {
+    width: var(--composer-control-height);
+    padding-inline: 0;
+  }
+
+  .send-button span {
+    display: none;
+  }
+
+  .send-button .assistant-icon {
+    display: block;
+    width: 1.55rem;
+    height: 1.55rem;
+  }
+
+  .assistant-row {
+    --mobile-avatar-offset: calc(2rem + clamp(.48rem, 1.8vw, .9rem));
+  }
+
+  .assistant-row .assistant-mark {
+    width: 2rem;
   }
 
   .assistant-row .message-content {
-    max-width: calc(100% - 2.55rem);
+    max-width: calc(100% - var(--mobile-avatar-offset));
+  }
+
+  .assistant-row:has(.message-bubble:first-child ~ .message-map) .message-content {
+    flex: 1;
+  }
+
+  .assistant-row .message-bubble:first-child ~ .message-map {
+    width: calc(100% + var(--mobile-avatar-offset));
+    margin-inline-start: calc(-1 * var(--mobile-avatar-offset));
   }
 }
 
 @media (max-height: 38rem) and (min-width: 36.001rem) {
   .welcome-panel {
     padding-block-start: 1.15rem;
-  }
-
-  .prompt-grid {
-    margin-top: 1rem;
   }
 }
 
