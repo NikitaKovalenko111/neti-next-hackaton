@@ -40,12 +40,12 @@ func (s *Service) Validate(ctx context.Context, blocks []models.Block) error {
 
 	for _, block := range blocks {
 		switch {
-		case block.Text != nil && block.Attachments == nil:
+		case block.Text != nil && block.Attachments == nil && block.Map == nil:
 			if strings.TrimSpace(block.Text.Message) == "" {
 				return fmt.Errorf("%w: text message is required", ErrInvalid)
 			}
 
-		case block.Attachments != nil && block.Text == nil:
+		case block.Attachments != nil && block.Text == nil && block.Map == nil:
 			if len(block.Attachments.Attachments) == 0 {
 				return fmt.Errorf("%w: attachments must not be empty", ErrInvalid)
 			}
@@ -75,6 +75,20 @@ func (s *Service) Validate(ctx context.Context, blocks []models.Block) error {
 				}
 				attachment.SizeBytes = size
 				attachment.URL = ""
+			}
+
+		case block.Map != nil && block.Text == nil && block.Attachments == nil:
+			if len(block.Map.Points) == 0 {
+				return fmt.Errorf("%w: map points must not be empty", ErrInvalid)
+			}
+			for _, point := range block.Map.Points {
+				if strings.TrimSpace(point.Title) == "" {
+					return fmt.Errorf("%w: map point title is required", ErrInvalid)
+				}
+				if !(point.Latitude >= -90 && point.Latitude <= 90 &&
+					point.Longitude >= -180 && point.Longitude <= 180) {
+					return fmt.Errorf("%w: map point coordinates are out of range", ErrInvalid)
+				}
 			}
 
 		default:

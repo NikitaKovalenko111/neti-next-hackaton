@@ -7,6 +7,7 @@ from app.models import (
     AgentResponse,
     AttachmentsBlock,
     ConversationContext,
+    MapBlock,
     TextBlock,
     UserAnswer,
 )
@@ -42,6 +43,8 @@ SYSTEM_PROMPT = """Ты — дружелюбный помощник Уфимск
 Для дат поступления и заселения используй get_university_dates, для стипендий find_scholarships.
 Для аннотаций к положениям используй search_university_documents, для ссылки на приказ или
 бланк — find_university_document_links. Для координат и доступности используй find_campus_details.
+Если просят показать объекты на карте, вызови find_campus_details с purpose=map.
+Если в базе нет координат, сообщи об этом и предложи известный адрес.
 Указывай год данных и их ограничения. Сведения без даты считай недатированными.
 Если пользователь просит фото, вызови list_photos. Для конкретного объекта сначала найди его ID.
 Если подтверждённого снимка нет, повтори поиск с include_unverified.
@@ -104,11 +107,13 @@ class AgentService:
             answer = UserAnswer(message=answer)
 
         history_summary = answer.history_summary.strip() if request.conversation is not None else ""
-        blocks: list[TextBlock | AttachmentsBlock] = [
+        blocks: list[TextBlock | AttachmentsBlock | MapBlock] = [
             TextBlock(message=answer.message, source=answer.source)
         ]
         if answer.photos:
             blocks.append(AttachmentsBlock(attachments=answer.photos))
+        if answer.map_points:
+            blocks.append(MapBlock(points=answer.map_points))
 
         response = AgentResponse(
             request_message_id=request.message_id,
