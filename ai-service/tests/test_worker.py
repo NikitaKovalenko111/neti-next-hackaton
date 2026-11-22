@@ -2,6 +2,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
 import aio_pika
+import httpx
 import pytest
 
 from app.models import AgentResponse
@@ -83,6 +84,34 @@ async def test_model_failure_requeues_without_publishing(settings, request_messa
     publish.assert_not_awaited()
     message.ack.assert_not_awaited()
     message.nack.assert_awaited_once_with(requeue=True)
+
+
+@pytest.mark.parametrize("status", [400, 401, 402, 403, 404, 422, 429, 503])
+async def test_model_http_error_preserves_retry_for_temporary_failures(
+    settings, request_message, status
+):
+    model = AsyncMock()
+    upstream = httpx.Request("POST", "https://openrouter.ai/api/v1/chat/completions")
+    model.generate.side_effect = httpx.HTTPStatusError(
+        "test upstream error", request=upstream, response=httpx.Response(status, request=upstream)
+    )
+    worker = RabbitWorker(settings, AgentService(model))
+    publish = AsyncMock()
+    worker.channel = SimpleNamespace(default_exchange=SimpleNamespace(publish=publish))
+    message = incoming(request_message)
+
+    await worker.handle(message)
+
+    if status in (429, 503):
+        publish.assert_not_awaited()
+        message.nack.assert_awaited_once_with(requeue=True)
+    else:
+        published = publish.call_args.args[0]
+        response = AgentResponse.model_validate_json(published.body)
+        assert response.request_message_id == request_message.message_id
+        assert "Попробуйте позже" in response.blocks[0].message
+        message.ack.assert_awaited_once()
+        message.nack.assert_not_awaited()
 
 
 @pytest.mark.parametrize("body", [b"not json", b"{}", b'{"message": "hello"}'])

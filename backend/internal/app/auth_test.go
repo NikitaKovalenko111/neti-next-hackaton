@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"mime/multipart"
 	"net/http"
+	"net/http/cookiejar"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strings"
 	"testing"
@@ -30,12 +32,12 @@ import (
 )
 
 func TestAccountAndGuestChatAccess(t *testing.T) {
-	url := os.Getenv("TEST_DATABASE_URL")
-	if url == "" {
+	databaseURL := os.Getenv("TEST_DATABASE_URL")
+	if databaseURL == "" {
 		t.Skip("set TEST_DATABASE_URL to run PostgreSQL integration test")
 	}
 	ctx := t.Context()
-	admin, err := pgxpool.New(ctx, url)
+	admin, err := pgxpool.New(ctx, databaseURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +49,7 @@ func TestAccountAndGuestChatAccess(t *testing.T) {
 	}
 	defer admin.Exec(ctx, "DROP SCHEMA "+quoted+" CASCADE")
 
-	cfg, err := pgxpool.ParseConfig(url)
+	cfg, err := pgxpool.ParseConfig(databaseURL)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -184,6 +186,25 @@ func TestAccountAndGuestChatAccess(t *testing.T) {
 		t.Fatal(err)
 	}
 	socket.Close()
+	wsCookieURL, err := url.Parse(server.URL + "/ws")
+	if err != nil {
+		t.Fatal(err)
+	}
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	jar.SetCookies(wsCookieURL, cookies)
+	client := &http.Client{Jar: jar}
+	logout, err := client.Post(server.URL+"/logout", "application/json", strings.NewReader("{}"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	logout.Body.Close()
+	if logout.StatusCode != http.StatusNoContent || len(jar.Cookies(wsCookieURL)) != 0 {
+		t.Fatal("logout must clear the WebSocket cookie")
+	}
+
 	socket, response, err := websocket.DefaultDialer.Dial(socketURL+"?user_id="+account.UserID.String(), nil)
 	if socket != nil {
 		socket.Close()

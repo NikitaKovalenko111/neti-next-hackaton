@@ -1,6 +1,9 @@
+import logging
 from collections import OrderedDict
 from typing import Protocol
 from uuid import UUID
+
+import httpx
 
 from app.models import (
     AgentRequest,
@@ -11,6 +14,9 @@ from app.models import (
     TextBlock,
     UserAnswer,
 )
+
+logger = logging.getLogger("uvicorn.error").getChild(__name__)
+PERMANENT_MODEL_STATUSES = {400, 401, 402, 403, 404, 422}
 
 SYSTEM_PROMPT = """Ты — дружелюбный помощник Уфимского университета науки и технологий (УУНиТ).
 Отвечай на языке пользователя.
@@ -110,11 +116,22 @@ class AgentService:
             filenames = ", ".join(attachment.filename for attachment in request.attachments)
             prompt += f"\n\nПрикреплённые файлы (доступны только имена): {filenames}"
 
-        if request.conversation is None:
-            answer = await self.model.generate(SYSTEM_PROMPT, prompt)
-        else:
-            answer = await self.model.generate(
-                SYSTEM_PROMPT, prompt, conversation=request.conversation
+        try:
+            if request.conversation is None:
+                answer = await self.model.generate(SYSTEM_PROMPT, prompt)
+            else:
+                answer = await self.model.generate(
+                    SYSTEM_PROMPT, prompt, conversation=request.conversation
+                )
+        except httpx.HTTPStatusError as error:
+            status = error.response.status_code
+            if status not in PERMANENT_MODEL_STATUSES:
+                raise
+            logger.warning(
+                "OpenRouter rejected request %s with HTTP %d", request.message_id, status
+            )
+            answer = UserAnswer(
+                message="Сейчас помощник не может подготовить ответ. Попробуйте позже."
             )
         if isinstance(answer, str):
             answer = UserAnswer(message=answer)

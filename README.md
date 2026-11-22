@@ -1,55 +1,90 @@
-# University AI agent
+# ИИ-помощник УУНиТ
 
-## Общий запуск
+Чат-помощник для абитуриентов и студентов Уфимского университета науки и технологий. Он отвечает на вопросы о поступлении, учебных программах, стипендиях, общежитиях и корпусах. В ответах могут быть ссылки на источники, фотографии и точки на карте. Чатом можно пользоваться как гость. После регистрации история новых диалогов доступна в аккаунте.
 
-Из корня репозитория скопируйте `.env.example` в `.env`, если файла ещё нет.
-Укажите в `.env` значения `OPENROUTER_API_KEY` и `JWT_SECRET`, затем запустите контейнеры. Для генерации секрета используйте `openssl rand -hex 32`. [Ключи OpenRouter](https://openrouter.ai/settings/keys)
+## Стек
+
+| Компонент | Технологии и назначение |
+| --- | --- |
+| `frontend/` | React, TypeScript, Vite, Redux Toolkit, Redux Saga, Leaflet. Nginx раздаёт приложение и проксирует API, WebSocket и подписанные ссылки на файлы. |
+| `backend/` | Go 1.24, `net/http`, pgx, JWT и bcrypt. Хранит аккаунты и историю, отправляет задачи и доставляет ответы через WebSocket. |
+| `ai-service/` | Python 3.12, FastAPI, aio-pika, asyncpg и OpenRouter. Агент вызывает инструменты поиска по университетской базе знаний и формирует ответ. |
+| Хранилища и обмен | PostgreSQL 16 с pgvector для истории и базы знаний, RabbitMQ для задач и ответов, MinIO для изображений. |
+| Запуск и проверки | Docker Compose и GitHub Actions. |
+
+При отправке сообщения Go сохраняет его в PostgreSQL и ставит задачу в очередь `agent_requests`. Python-воркер получает из задачи контекст диалога и использует SQL для структурированных данных и pgvector для смыслового поиска. Он публикует ответ в `agent_responses`. Go сохраняет ответ в истории и отправляет его браузеру через WebSocket. Контекст передаётся через RabbitMQ, поэтому воркер работает со своей схемой `rag`.
+
+## Запуск с чистого окружения
+
+Понадобятся Git, запущенный Docker Engine или Docker Desktop с плагином Compose v2 и ключ OpenRouter с доступом к выбранным моделям. Go, Node.js и Python установлены в образах. Генерация текста и эмбеддингов выполняется в OpenRouter, поэтому для запуска и работы нужны выход в интернет и доступный лимит API. [Создать ключ OpenRouter](https://openrouter.ai/settings/keys)
+
+### 1. Подготовьте `.env`
+
+Перейдите в корень клонированного репозитория, где лежит `docker-compose.yml`.
 
 ```sh
-docker compose up --build -d
-docker compose logs -f rag-index campus-photos ai-service backend
+docker compose version
+test -f .env || cp .env.example .env
+openssl rand -hex 32
 ```
 
-Compose запускает фронтенд через Nginx, Go-бэкенд, AI-сервис, PostgreSQL, RabbitMQ и MinIO.
-После подготовки PostgreSQL задача `rag-index` индексирует справочники через OpenRouter
-и сохраняет векторы в pgvector. Задача `campus-photos` загружает фотографии
-справочника в MinIO. AI-сервис ждёт завершения обеих задач
-и отправляет в OpenRouter запросы на генерацию и поиск по смыслу.
+Откройте `.env` и заполните `OPENROUTER_API_KEY` своим ключом. В `JWT_SECRET` вставьте результат последней команды. Секрет JWT должен содержать минимум 32 байта. Корневой `.env` игнорируется Git.
 
-MinIO собирается из закреплённого исходного релиза `RELEASE.2025-09-07T16-13-09Z` через [deploy/minio/Dockerfile](deploy/minio/Dockerfile), поскольку [официальная community-версия распространяется как исходники](https://github.com/minio/minio#source-only-distribution). Dockerfile AI-сервиса находится в [ai-service/Dockerfile](ai-service/Dockerfile).
+| Переменная | Для чего нужна |
+| --- | --- |
+| `OPENROUTER_MODEL` | Идентификатор чат-модели. В `.env.example` задан `qwen/qwen3-30b-a3b-instruct-2507`. Для другой модели проверьте поддержку вызовов инструментов и структурированного JSON. |
+| `OPENROUTER_EMBEDDING_MODEL` | Модель смыслового поиска. По умолчанию `baai/bge-m3` с векторами размерности 1024. При смене нужно построить индекс для новой модели. Другая размерность требует изменения схемы. |
+| `OPENROUTER_MAX_TOKENS` | Лимит токенов одной генерации. По умолчанию `1024`. |
+| `FRONTEND_PORT` | Порт веб-интерфейса. По умолчанию `5138`. |
+| `MINIO_PUBLIC_ENDPOINT` | Адрес, на который подписываются ссылки на фотографии. Для локального запуска указывает на Nginx по адресу `http://localhost:${FRONTEND_PORT}`. |
 
-## Адреса
+В `.env.example` заданы учётные данные для локальной разработки. При публичном размещении задайте собственные пароли PostgreSQL, RabbitMQ и MinIO. Логины и пароли PostgreSQL и RabbitMQ используются в URL подключения. Зарезервированные символы в этих URL требуют процентного кодирования.
+
+### 2. Соберите и запустите контейнеры
+
+```sh
+docker compose config --quiet
+docker compose up --build -d
+docker compose ps --all
+```
+
+При первом запуске `postgres-init` создаёт схемы и роли, `rag-index` импортирует справочники, строит недостающие векторы и сохраняет их в pgvector, а `campus-photos` загружает фотографии в MinIO. AI-сервис стартует после успешного завершения индексации и импорта фотографий. Успешный статус у этих трёх задач — `Exited (0)`. Первая индексация может занять несколько минут и расходует лимит эмбеддингов OpenRouter. При повторном запуске для той же модели переиндексируются изменённые и новые записи.
+
+```sh
+docker compose logs --tail=100 postgres-init rag-index campus-photos
+docker compose logs -f backend ai-service
+```
+
+### 3. Проверьте работу
+
+```sh
+curl -fsS -o /dev/null -w 'Go backend: %{http_code}\n' http://localhost:8080/health
+curl -fsS http://localhost:8000/health
+```
+
+Go должен вернуть `200`. AI-сервис возвращает `200`, когда RabbitMQ готов и OpenRouter принимает ключ. Откройте [веб-интерфейс](http://localhost:5138/) и отправьте вопрос «Где главный корпус УУНиТ?». В ответе можно проверить адрес, источник и карту. Для проверки истории войдите в аккаунт, отправьте сообщение и заново откройте диалог через меню «Аккаунт».
 
 | Сервис | Адрес по умолчанию |
 | --- | --- |
-| Фронтенд (Nginx) | http://localhost:5138/ |
-| Backend | http://localhost:8080/health |
-| WebSocket | ws://localhost:8080/ws?user_id=UUID |
-| AI service | http://localhost:8000/health |
-| PostgreSQL | localhost:5433 |
-| RabbitMQ | localhost:5672 |
-| RabbitMQ UI | http://localhost:15672 |
-| MinIO API | http://localhost:9000 |
-| MinIO Console | http://localhost:9001 |
+| Веб-интерфейс и прокси API | `http://localhost:5138/` |
+| Go API | `http://localhost:8080/health` |
+| AI-сервис | `http://localhost:8000/health` |
+| PostgreSQL | `localhost:5433` |
+| RabbitMQ и панель управления | `localhost:5672` и `http://localhost:15672/` |
+| MinIO API и консоль | `http://localhost:9000/` и `http://localhost:9001/` |
 
-Все порты публикуются на `127.0.0.1`. PostgreSQL снаружи использует порт `5433`, чтобы не конфликтовать с локальной БД; внутри сети контейнеров — `5432`.
+Локальные порты по умолчанию доступны на `127.0.0.1`. Если порт занят, измените соответствующую переменную в `.env` и повторите `docker compose up -d`. Порты между контейнерами останутся прежними.
 
-В `.env.example` заданы настройки для локальной разработки: администратор PostgreSQL `postgres/postgres`, backend `backend_app/backend_app`, RAG `rag_app/rag_app`, RabbitMQ `university/university`, MinIO `minioadmin/minioadmin`. Backend использует только свою роль, а не администратора БД. У backend и AI-сервиса одинаковые адрес RabbitMQ и имена очередей `agent_requests`/`agent_responses`.
+## Данные и развёртывание
 
-## Схемы PostgreSQL
+В одной базе `university` есть две изолированные схемы.
 
-Обе схемы находятся в одной базе `university`:
-
-| Схема | Роль | Назначение |
+| Схема | Роль по умолчанию | Данные |
 | --- | --- | --- |
-| `backend` | `BACKEND_POSTGRES_USER` (по умолчанию `backend_app`) | Чаты, сообщения, вложения, outbox и журнал миграций Go |
-| `rag` | `RAG_POSTGRES_USER` (по умолчанию `rag_app`) | Справочник кампуса и векторный поиск |
+| `backend` | `backend_app` | Пользователи, чаты, сообщения, вложения, очередь исходящих задач и миграции Go. |
+| `rag` | `rag_app` | Справочники и аннотации по УУНиТ, источники, метаданные фотографий и эмбеддинги. Здесь активируется pgvector. |
 
-Роли имеют права на свои схемы и не могут читать или изменять другую схему. Создание таблиц в `public` запрещено. Администратор остаётся отдельной ролью для обслуживания. В `rag` активируется расширение `vector` (pgvector). Задача `rag-index` импортирует справочник из `all.json` и загружает эмбеддинги. [Запуск импорта и поиска](ai-service/README.md#справочник-кампуса).
-
-Пример подключения RAG-процесса с хоста: `postgres://rag_app:rag_app@localhost:5433/university?sslmode=disable&search_path=rag`. Из сети Compose вместо `localhost:5433` используется `postgres:5432`. Пароли задаются через `BACKEND_POSTGRES_PASSWORD` и `RAG_POSTGRES_PASSWORD`.
-
-Для существующего volume остановите backend, примените настройку и запустите обновлённое приложение:
+Для переноса старых таблиц из `public` в `backend` выполните команды ниже. Скрипт переносит известные таблицы Go вместе с данными. Если таблица с тем же именем существует в обеих схемах, транзакция прерывается, чтобы можно было разобраться с дубликатом до повторного запуска.
 
 ```sh
 docker compose stop backend
@@ -57,33 +92,36 @@ docker compose run --rm postgres-init
 docker compose up --build -d backend
 ```
 
-`postgres-init` переносит известные таблицы Go из `public` в `backend` вместе с данными и назначает владельца `backend_app`. Повторный запуск сохраняет таблицы. Если одноимённая таблица есть в обеих схемах, операция отменяется транзакцией и требует разрешить конфликт вручную. Удалять volume для перехода не нужно. После изменения паролей приложений повторно выполните `postgres-init` и пересоздайте соответствующие приложения.
+При смене паролей ролей приложений повторите `postgres-init` и пересоздайте соответствующие контейнеры. Административная роль PostgreSQL и учётная запись RabbitMQ создаются при первой инициализации их хранилищ. Для существующих volumes смените эти пароли и на самих серверах до обновления конфигурации приложений.
 
-Проверка изоляции на запущенной PostgreSQL с установленным pgvector (нужна административная роль с правами создания баз и ролей):
+Для доступа с другого компьютера публикуйте фронтенд через HTTPS-прокси. Укажите внешний адрес фронтенда в `MINIO_PUBLIC_ENDPOINT` и задайте `JWT_SECURE_COOKIE=true`. Прокси должен сохранять исходный `Host` и поддерживать WebSocket на `/ws`. PostgreSQL, RabbitMQ, MinIO и приложения могут оставаться на локальных адресах: браузер использует Nginx. Если внешний прокси находится на другой машине, настройте `FRONTEND_BIND_ADDRESS` на доступный ему интерфейс.
 
-```sh
-PGHOST=localhost PGPORT=5433 PGUSER=postgres PGPASSWORD=postgres \
-  TEST_POSTGRES_SCHEMAS=1 python3 -m unittest discover -s deploy/postgres -p 'test_*.py' -v
-```
+Образ MinIO собирается из закреплённого исходного релиза. [Dockerfile MinIO](deploy/minio/Dockerfile)
 
-Тест создаёт отдельную временную базу и роли, проверяет перенос истории, повторную настройку и запрет доступа между схемами, затем удаляет свои данные.
+## Диагностика и обслуживание
 
-Backend обращается к MinIO внутри сети по `minio:9000`, а ссылки для браузера подписывает с адресом `MINIO_PUBLIC_ENDPOINT`. В общем Compose по умолчанию это адрес фронтенда `http://localhost:${FRONTEND_PORT}`. Nginx передаёт подписанные GET-запросы к бакету в MinIO. Для доступа с другого компьютера укажите публичный адрес фронтенда в `MINIO_PUBLIC_ENDPOINT` и настройте адрес привязки через `FRONTEND_BIND_ADDRESS` или внешний прокси. Для HTTPS за прокси укажите публичный URL с `https://` и установите `JWT_SECURE_COOKIE=true`. `MINIO_REGION` применяется и к серверу MinIO, и к клиенту backend.
-
-Имена пользователей и пароли PostgreSQL/RabbitMQ используются в URL подключения. Если в них есть зарезервированные символы URL, настройте URL подключения в Compose с корректным кодированием.
-
-## Управление
+- Если AI-сервис не запустился, сначала проверьте `docker compose ps --all` и лог `rag-index`. Когда устраните причину сбоя, повторите `docker compose up --build -d ai-service`.
+- Если AI-сервис отвечает `503`, проверьте лог `ai-service` и поля `rabbitmq` и `openrouter` в `/health`. При отказе OpenRouter проверьте ключ, лимит API и доступ к модели.
+- Если фотографии не отображаются, проверьте успешное завершение `campus-photos`, значение `MINIO_PUBLIC_ENDPOINT` и совпадение `MINIO_REGION` у приложения и хранилища.
 
 ```sh
-docker compose ps
-docker compose logs -f backend ai-service
-docker compose stop
-docker compose up -d
-docker compose down
+docker compose stop    # Остановить контейнеры
+docker compose up -d  # Снова запустить
+docker compose down   # Удалить контейнеры, сохранив данные
 ```
 
-Данные PostgreSQL, RabbitMQ, MinIO и скачанная модель сохраняются в именованных volumes. `docker compose down` их сохраняет; `docker compose down -v` удаляет данные и модель.
+`docker compose down -v` также удаляет volumes PostgreSQL, RabbitMQ и MinIO, включая аккаунты, историю, векторы и изображения. Для автономной разработки у компонентов есть свои Compose-файлы с отдельными volumes. Общий запуск выполняйте из корня.
 
-Подкаталоги сохраняют отдельные Compose-файлы для автономной разработки. Для совместного запуска используйте только корневой файл, чтобы приложения работали с одним брокером и не конфликтовали по портам. Volumes разных Compose-проектов не объединяются; существующие данные автономных запусков автоматически не переносятся.
+## Проверки и документация компонентов
 
-Описание контрактов и локальных запусков: [backend](backend/README.md), [ai-service](ai-service/README.md).
+```sh
+(cd frontend && npm ci && npm run lint && npm run build)
+(cd backend && go vet ./... && go test -race ./...)
+(cd ai-service && python3 -m venv .venv && . .venv/bin/activate && python -m pip install -e '.[dev]' && ruff check . && python -m pytest -q)
+```
+
+Для проверок нужны Node.js 22, Go 1.24 и Python 3.12 или новее. Интеграционные тесты подключаются к реальным сервисам через `TEST_DATABASE_URL`, `TEST_RABBITMQ_URL` и `TEST_MINIO_ENDPOINT`, когда заданы необходимые переменные. Тестовая модель не обращается к OpenRouter.
+
+- HTTP API, WebSocket, Postman и проверка полного pipeline. [Backend](backend/README.md)
+- Настройка агента, импорт и поиск по базе знаний. [AI-сервис](ai-service/README.md), [Инструменты RAG](ai-service/tools/README.md)
+- Автоматические проверки и правила пропуска компонентов. [CI](.github/README.md)

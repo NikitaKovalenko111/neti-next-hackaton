@@ -4,8 +4,6 @@ export interface ChatSource {
   section?: string
 }
 
-export type Audience = 'unknown' | 'applicant' | 'student'
-
 interface ChatAttachment {
   id: string
   filename: string
@@ -26,7 +24,7 @@ export interface MapBlock {
 }
 
 export type MessageBlock =
-  | { type: 'text'; message: string; audience?: Audience }
+  | { type: 'text'; message: string }
   | { type: 'attachments'; attachments: ChatAttachment[] }
   | MapBlock
 
@@ -42,8 +40,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function isWebUrl(value: unknown): value is string {
-  return typeof value === 'string' && URL.canParse(value) && /^https?:$/i.test(new URL(value).protocol)
+export function isWebUrl(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+
+  try {
+    const { protocol } = new URL(value)
+    return protocol === 'https:' || protocol === 'http:'
+  } catch {
+    return false
+  }
 }
 
 function isSource(value: unknown): value is ChatSource {
@@ -71,14 +76,7 @@ function parseBlock(value: unknown): MessageBlock | undefined {
   if (!isRecord(value)) return
 
   if (value.type === 'text' && typeof value.message === 'string' && value.message.trim()) {
-    const audience = value.audience
-    return {
-      type: 'text',
-      message: value.message,
-      audience: audience === 'applicant' || audience === 'student' || audience === 'unknown'
-        ? audience
-        : undefined,
-    }
+    return { type: 'text', message: value.message }
   }
   if (value.type === 'attachments' && Array.isArray(value.attachments)) {
     const attachments = value.attachments.flatMap((item: unknown) => {

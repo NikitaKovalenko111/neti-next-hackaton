@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { accountSessionKey, currentAccount, type Account } from '../../api/account'
+import { createChatId } from '../../api/chatId'
 import type { ChatMessage } from '../../api/messageBlocks'
 import { AccountDialog } from '../../components/assistant/AccountDialog'
 import { AssistantIcon, AssistantMark } from '../../components/assistant/AssistantIcon'
@@ -22,12 +23,6 @@ const prompts = [
   { label: 'Как добраться', question: 'Как добраться до главного корпуса УУНиТ?', icon: 'pin' },
 ] as const
 
-const audienceLabels = {
-  unknown: 'Профиль уточняется',
-  applicant: 'Абитуриент',
-  student: 'Студент',
-}
-
 export function AssistantPage() {
   const dispatch = useDispatch<AppDispatch>()
   const { account, messages, sessionId, status, error, pendingMessageId } = useSelector(
@@ -47,8 +42,6 @@ export function AssistantPage() {
   const hasMessages = messages.length > 0
   const isLoading = status === 'loading'
   const canSend = !isLoading && pendingMessageId === null
-  const audience = messages.findLast((message) => message.role === 'assistant')
-    ?.blocks.find((block) => block.type === 'text')?.audience ?? 'unknown'
 
   useEffect(() => {
     const transcript = transcriptRef.current
@@ -56,12 +49,13 @@ export function AssistantPage() {
   }, [messages.length, status])
 
   const changeAccount = useCallback((current: Account | null) => {
-    dispatch(assistantActions.accountChanged({ account: current, sessionId: crypto.randomUUID() }))
+    dispatch(assistantActions.accountChanged({ account: current, sessionId: createChatId() }))
+    if (current?.id === account?.id) return
     const key = favoritesStorageKey(current?.id)
     setSavedFavorites({ key, messages: loadFavorites(key) })
     setFavoriteError(false)
     setDraft('')
-  }, [dispatch])
+  }, [account?.id, dispatch])
 
   useEffect(() => {
     function syncStorage(event: StorageEvent) {
@@ -110,7 +104,7 @@ export function AssistantPage() {
 
     dispatch(
       assistantActions.addUserMessage({
-        id: crypto.randomUUID(),
+        id: createChatId(),
         role: 'user',
         blocks: [{ type: 'text', message: content }],
       }),
@@ -133,13 +127,13 @@ export function AssistantPage() {
   }
 
   function startNewSession() {
-    dispatch(assistantActions.startNewSession(crypto.randomUUID()))
+    dispatch(assistantActions.startNewSession(createChatId()))
     setDraft('')
     focusComposerOnDesktop()
   }
 
   function restoreChat(owner: string, chatId: string, messages: ChatMessage[]) {
-    const sessionId = crypto.randomUUID()
+    const sessionId = createChatId()
     dispatch(assistantActions.restoreChat({ accountId: owner, sessionId, chatId, messages }))
     if (messages.at(-1)?.role === 'user') dispatch(requestAnswer(sessionId))
     setDraft('')
@@ -148,7 +142,6 @@ export function AssistantPage() {
   return (
     <div className="assistant-app">
       <ProjectHeader
-        profileLabel={audienceLabels[audience]}
         signedIn={Boolean(account)}
         onNewChat={startNewSession}
         onOpenFavorites={() => favoritesDialogRef.current?.showModal()}
