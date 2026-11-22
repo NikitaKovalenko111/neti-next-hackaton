@@ -1,0 +1,924 @@
+{
+  "metadata": {
+    "dataset_id": "uunit_material_aid",
+    "schema_version": "1.0",
+    "as_of": "2026-11-20",
+    "language": "ru",
+    "source_policy": "Только официальный действующий приказ №2013 от 17.06.2026 и действующие информационные страницы УУНиТ; устаревшие нормативные документы исключены.",
+    "contains_private_student_data": false,
+    "data_confidence": "high_for_current_order",
+    "coordinates_included": false
+  },
+  "policy": {
+    "id": "uunit_student_material_support_2013_2026",
+    "name": "Материальная поддержка нуждающихся обучающихся УУНиТ",
+    "type": "one_time_or_periodic_financial_aid",
+    "normative_order": {
+      "number": "2013",
+      "signed_at": "2026-06-17",
+      "effective_from": "2026-06-17",
+      "approved_document": "Положение о материальной поддержке нуждающихся обучающихся УУНиТ",
+      "source_id": "uunit_order_2013_2026",
+      "replaces": [
+        "Приказ №1671 от 27.05.2024",
+        "Изменения №3070 от 31.10.2024",
+        "Изменения №0613 от 25.02.2025",
+        "Изменения №1165 от 10.04.2025"
+      ]
+    },
+    "branches_scope": [
+      "ufa",
+      "birsk",
+      "sterlitamak",
+      "sibay",
+      "neftekamsk",
+      "ishimbay",
+      "kumertau"
+    ],
+    "eligible_student_levels": [
+      "higher_education",
+      "secondary_vocational_education",
+      "postgraduate"
+    ],
+    "eligibility": {
+      "full_time_public_funded": "Студенты ВО/СПО, в том числе иностранные, и аспиранты очной формы за счет федерального бюджета, при наличии основания из приложения №3.",
+      "full_time_fee_paying": "Обучающиеся очной формы на договорной основе могут претендовать на поддержку из средств от приносящей доход деятельности университета; в исключительных случаях по решению стипендиальной комиссии.",
+      "academic_leave": "Обучающиеся в академическом отпуске также могут претендовать на поддержку.",
+      "other_sources": "Финансирование также может осуществляться из бюджета Республики Башкортостан при применимости.",
+      "guaranteed": false
+    },
+    "submission": {
+      "method": "paper",
+      "online_submission_confirmed": false,
+      "recipient": "Ректор УУНиТ или директор филиала",
+      "main_university": [
+        "Деканат факультета или дирекция института",
+        "Многофункциональный студенческий офис (МФСО)"
+      ],
+      "branches": "Ответственное структурное подразделение филиала; для Бирского филиала — деканат факультета",
+      "deadline_day_of_month": 23,
+      "what_to_submit": [
+        "Личное письменное заявление с подробным обоснованием причины",
+        "Подтверждающие документы согласно выбранному основанию"
+      ],
+      "form_in_current_order": {
+        "main_campus": "Приложение №1, страница 6 PDF",
+        "branches": "Приложение №2, страница 7 PDF"
+      },
+      "source_ids": [
+        "uunit_order_2013_2026",
+        "uunit_social_material_aid",
+        "birsk_social_support"
+      ]
+    },
+    "review_process": {
+      "step1": "Заявление и доказательства рассматривает стипендиальная комиссия факультета/института или подразделения филиала; она выносит рекомендацию.",
+      "step2": "Протокол и документы направляются до 27-го числа месяца для рассмотрения стипендиальной комиссией университета/филиала.",
+      "step3": "Стипендиальная комиссия университета/филиала решает вопрос о назначении или отказе простым большинством голосов.",
+      "step4": "Проект приказа формируется и направляется на согласование до 8-го числа каждого месяца.",
+      "decision": "Приказ ректора либо директора филиала",
+      "review_time_days_guaranteed": null
+    },
+    "restrictions": [
+      "Одновременное назначение двух и более видов материальной поддержки в одном месяце не допускается.",
+      "Неподтвержденные обстоятельства или отсутствие доступных средств могут привести к отказу.",
+      "Категории и коэффициенты в приложении №3 не означают автоматического права на фиксированную выплату.",
+      "Размер при выплате может быть скорректирован комиссией исходя из документов и тяжести ситуации."
+    ],
+    "amount_basis": {
+      "unit": "multiplicity_of_state_academic_scholarship",
+      "note": "Коэффициенты для оснований 1–20 и 23 относятся к размеру государственной академической стипендии, установленному в УУНиТ на дату решения, и НЕ являются фиксированными суммами в рублях."
+    },
+    "source_id": "uunit_order_2013_2026",
+    "regulation_pages": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ]
+  },
+  "grounds": [
+    {
+      "number_in_regulation": 1,
+      "id": "orphan_or_without_parental_care",
+      "title": "Дети-сироты, дети без попечения родителей и лица из их числа",
+      "description": "Дети-сироты, дети без попечения родителей и лица из их числа",
+      "frequency": "1 раз в квартал",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 5,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        8
+      ]
+    },
+    {
+      "number_in_regulation": 2,
+      "id": "student_disability",
+      "title": "Инвалидность I или II группы либо инвалидность с детства",
+      "description": "Инвалидность I или II группы либо инвалидность с детства",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия действующей справки об инвалидности обучающегося"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 4,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        8
+      ]
+    },
+    {
+      "number_in_regulation": 3,
+      "id": "child_of_radiation_liquidator",
+      "title": "Дети ликвидаторов аварии на Чернобыльской АЭС и иных радиационных катастроф",
+      "description": "Дети ликвидаторов аварии на Чернобыльской АЭС и иных радиационных катастроф",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия удостоверения участника ликвидации последствий радиационной катастрофы"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 3,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        8
+      ]
+    },
+    {
+      "number_in_regulation": 4,
+      "id": "disability_from_military_service",
+      "title": "Инвалидность вследствие военной травмы или заболевания во время военной службы",
+      "description": "Инвалидность вследствие военной травмы или заболевания во время военной службы",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия действующей справки об инвалидности",
+        "Копия удостоверения ветерана и участника боевых действий"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        8,
+        9
+      ]
+    },
+    {
+      "number_in_regulation": 5,
+      "id": "recipient_of_state_social_assistance",
+      "title": "Получение государственной социальной помощи",
+      "description": "Получение государственной социальной помощи",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия справки о получении государственной социальной помощи из УСЗН/МФЦ, СФР или через Госуслуги с электронной подписью"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        9
+      ]
+    },
+    {
+      "number_in_regulation": 6,
+      "id": "registered_marriage",
+      "title": "Регистрация брака",
+      "description": "Регистрация брака",
+      "frequency": "Единовременно",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия свидетельства о браке"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 3,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": {
+        "period": "6_months",
+        "from": "registration_of_marriage"
+      },
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        9
+      ]
+    },
+    {
+      "number_in_regulation": 7,
+      "id": "minor_child",
+      "title": "Наличие несовершеннолетнего ребёнка (детей)",
+      "description": "Наличие несовершеннолетнего ребёнка (детей)",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия свидетельства о рождении ребёнка"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 3,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        9
+      ]
+    },
+    {
+      "number_in_regulation": 8,
+      "id": "parent_with_disability",
+      "title": "Один или оба родителя имеют инвалидность I или II группы",
+      "description": "Один или оба родителя имеют инвалидность I или II группы",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия действующей справки об инвалидности родителя (родителей)"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        9
+      ]
+    },
+    {
+      "number_in_regulation": 9,
+      "id": "parent_retired",
+      "title": "Один или оба родителя получают пенсию по старости или за выслугу лет",
+      "description": "Один или оба родителя получают пенсию по старости или за выслугу лет",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия справки о пенсии родителя (родителей)"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        9
+      ]
+    },
+    {
+      "number_in_regulation": 10,
+      "id": "large_family",
+      "title": "Обучающийся из многодетной семьи",
+      "description": "Обучающийся из многодетной семьи",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копии свидетельств о рождении всех детей семьи",
+        "При наличии: копии документов об опеке/попечительстве над детьми",
+        "Если в семье есть дети старше 18 лет: справка об их очном обучении, выданная не ранее чем за 30 дней до обращения"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [
+        "В положении: помощь до достижения старшим ребенком 18 лет или 23 лет при его очном обучении."
+      ],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        10
+      ]
+    },
+    {
+      "number_in_regulation": 11,
+      "id": "single_parent_household",
+      "title": "Проживание в неполной семье, где ребёнка воспитывает один родитель",
+      "description": "Проживание в неполной семье, где ребёнка воспитывает один родитель",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Один из документов: копия свидетельства о расторжении брака родителей, свидетельства о смерти одного родителя, справки о рождении с записью об отце со слов матери, справки об отсутствии записи акта гражданского состояния родителя либо решения суда о разводе"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        10
+      ]
+    },
+    {
+      "number_in_regulation": 12,
+      "id": "early_pregnancy_registration",
+      "title": "Постановка обучающейся на медицинский учёт по беременности до 12 недель включительно",
+      "description": "Постановка обучающейся на медицинский учёт по беременности до 12 недель включительно",
+      "frequency": "Единовременно",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "При необходимости: подтверждение смены ФИО",
+        "Справка из женской консультации о постановке на учет в ранние сроки беременности"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 3,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": {
+        "period": "once_during_pregnancy",
+        "from": "pregnancy"
+      },
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        11
+      ]
+    },
+    {
+      "number_in_regulation": 13,
+      "id": "child_birth",
+      "title": "Рождение ребёнка",
+      "description": "Рождение ребёнка",
+      "frequency": "Единовременно",
+      "required_documents": [
+        "Копия свидетельства о рождении ребёнка",
+        "Копия свидетельства о рождении обучающегося",
+        "При необходимости: подтверждение смены ФИО"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 3,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": {
+        "period": "6_months",
+        "from": "issuance_of_child_birth_certificate"
+      },
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        11
+      ]
+    },
+    {
+      "number_in_regulation": 14,
+      "id": "death_of_close_relative",
+      "title": "Смерть близкого родственника: родителя, супруга, ребёнка, опекуна либо попечителя",
+      "description": "Смерть близкого родственника: родителя, супруга, ребёнка, опекуна либо попечителя",
+      "frequency": "Единовременно",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия свидетельства о смерти родственника",
+        "Документы, подтверждающие близкое родство или семейное положение; для опекуна/попечителя — факт опеки до 18 лет"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 5,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": {
+        "period": "6_months",
+        "from": "issuance_of_death_certificate"
+      },
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        11
+      ]
+    },
+    {
+      "number_in_regulation": 15,
+      "id": "forced_migrant",
+      "title": "Статус вынужденного переселенца либо члена его семьи",
+      "description": "Статус вынужденного переселенца либо члена его семьи",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копии документов о принадлежности к семье переселенцев",
+        "Копия удостоверения вынужденного переселенца"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        11
+      ]
+    },
+    {
+      "number_in_regulation": 16,
+      "id": "unemployed_parent",
+      "title": "Один или оба родителя официально зарегистрированы как безработные",
+      "description": "Один или оба родителя официально зарегистрированы как безработные",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Справка службы занятости о постановке родителя на учёт как безработного, выданная не ранее чем за 30 дней до подачи"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        11
+      ]
+    },
+    {
+      "number_in_regulation": 17,
+      "id": "loss_of_property",
+      "title": "Потеря личного имущества из-за стихийного бедствия или преступления",
+      "description": "Потеря личного имущества из-за стихийного бедствия или преступления",
+      "frequency": "Единовременно",
+      "required_documents": [
+        "Копия паспорта: разворот с ФИО и страница регистрации",
+        "Документ о происшествии из МЧС, правоохранительных органов либо иных уполномоченных служб",
+        "При наличии: подтверждение материального ущерба",
+        "При наличии уголовного дела: документ о признании потерпевшим"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 5,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": {
+        "period": "6_months",
+        "from": "incident"
+      },
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        12
+      ]
+    },
+    {
+      "number_in_regulation": 18,
+      "id": "student_medical_expenses",
+      "title": "Расходы на лечение или лекарства при болезни/травме самого обучающегося",
+      "description": "Расходы на лечение или лекарства при болезни/травме самого обучающегося",
+      "frequency": "Единовременно",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Обязательное направление врача по месту жительства или студенческой поликлиники на обследование либо лечение",
+        "Медицинская справка о заболевании/операции/лечении/обследовании",
+        "Документы об оплате лекарств, обследований, операций согласно назначению врача",
+        "Копия договора на медицинские услуги и лицензии медицинской организации"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 5,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": {
+        "period": "6_months",
+        "from": "issuance_of_medical_certificates_and_supporting_documents"
+      },
+      "important_notes": [
+        "Стипендиальная комиссия может запросить дополнительные документы."
+      ],
+      "restrictions": [
+        "Не оплачиваются стоматологические услуги (включая протезирование) и косметические операции",
+        "Не более документально подтверждённых фактических расходов"
+      ],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        12,
+        13
+      ]
+    },
+    {
+      "number_in_regulation": 19,
+      "id": "vacation_round_trip",
+      "title": "Расходы на поездку домой и обратно в установленные каникулы",
+      "description": "Расходы на поездку домой и обратно в установленные каникулы",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия паспорта: основной разворот",
+        "Копия страницы паспорта с постоянной регистрацией",
+        "Оригиналы именных проездных документов и документы об оплате"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 3,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [
+        "Периоды поездок: с 1 декабря по 10 февраля включительно и с 1 июля по 31 августа включительно."
+      ],
+      "restrictions": [
+        "Не возмещаются поездки на такси",
+        "Не более документально подтверждённых фактических расходов"
+      ],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        13
+      ]
+    },
+    {
+      "number_in_regulation": 20,
+      "id": "single_student_parent",
+      "title": "Неполная студенческая семья: один родитель-студент воспитывает ребёнка",
+      "description": "Неполная студенческая семья: один родитель-студент воспитывает ребёнка",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия свидетельства о рождении ребёнка",
+        "При необходимости: подтверждение смены ФИО",
+        "Документ о статусе одинокого родителя (развод, смерть супруга, справка о рождении с записью об отце со слов матери или справка об отсутствии регистрации акта гражданского состояния родителя)"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 3,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        13
+      ]
+    },
+    {
+      "number_in_regulation": 21,
+      "id": "military_or_related_service_participant",
+      "title": "Обучающиеся, участвовавшие в СВО, отражении вооруженного вторжения или предусмотренных положением боевых действиях",
+      "description": "Обучающиеся, участвовавшие в СВО, отражении вооруженного вторжения или предусмотренных положением боевых действиях",
+      "frequency": "1 раз в квартал",
+      "required_documents": [
+        "Копия паспорта с актуальной регистрацией",
+        "Копия свидетельства о рождении обучающегося",
+        "Копии ИНН и СНИЛС",
+        "Документ о соответствующем статусе: справка военкомата/Госуслуг либо документ о выполнении задач",
+        "Для обучающихся на договорной основе дополнительно — реквизиты банковской карты, заверенные подписью"
+      ],
+      "amount": {
+        "type": "fixed_rub",
+        "amount_rub": 5000,
+        "max_multiplier": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [
+        "В положении выделены подпункты 21а, 21б и 21в; точный вид подтверждения зависит от подпункта."
+      ],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        14,
+        15
+      ]
+    },
+    {
+      "number_in_regulation": 22,
+      "id": "family_of_service_participant",
+      "title": "Члены семей лиц, перечисленных в пункте 21",
+      "description": "Члены семей лиц, перечисленных в пункте 21",
+      "frequency": "1 раз в квартал",
+      "required_documents": [
+        "Копия паспорта с актуальной регистрацией",
+        "Копия свидетельства о рождении обучающегося",
+        "Копии ИНН и СНИЛС",
+        "Копия свидетельства о браке обучающегося (по перечню положения)",
+        "Документ, подтверждающий статус члена семьи лица из пункта 21",
+        "Для обучающихся на договорной основе дополнительно — реквизиты банковской карты, заверенные подписью"
+      ],
+      "amount": {
+        "type": "fixed_rub",
+        "amount_rub": 5000,
+        "max_multiplier": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [
+        "Список документов для конкретного родства следует уточнять в МФСО: перечень положения содержит свидетельство о браке."
+      ],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        15
+      ]
+    },
+    {
+      "number_in_regulation": 23,
+      "id": "two_full_time_student_spouses",
+      "title": "Студенческая семья: оба супруга учатся очно",
+      "description": "Студенческая семья: оба супруга учатся очно",
+      "frequency": "1 раз за учебный семестр",
+      "required_documents": [
+        "Копия свидетельства о рождении обучающегося",
+        "Копия свидетельства о браке",
+        "Справка об обучении супруга в образовательной организации ВО или СПО"
+      ],
+      "amount": {
+        "type": "scholarship_multiplier_up_to",
+        "max_multiplier": 2,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        15
+      ]
+    },
+    {
+      "number_in_regulation": 24,
+      "id": "other_severe_hardship",
+      "title": "Иные тяжелые материальные обстоятельства",
+      "description": "Иные тяжелые материальные обстоятельства",
+      "frequency": "По индивидуальному решению",
+      "required_documents": [
+        "Документы, подтверждающие конкретную трудную жизненную ситуацию"
+      ],
+      "amount": {
+        "type": "individual_decision",
+        "max_multiplier": null,
+        "amount_rub": null
+      },
+      "decision_by_commission": true,
+      "depends_on_available_funds": true,
+      "application_deadline_special": null,
+      "important_notes": [
+        "Допускается индивидуальное решение с обоснованием в протоколе стипендиальной комиссии."
+      ],
+      "restrictions": [],
+      "source_id": "uunit_order_2013_2026",
+      "source_pdf_pages": [
+        15
+      ]
+    }
+  ],
+  "submission_channels": [
+    {
+      "id": "university_ufa",
+      "program_id": "uunit_student_material_support_2013_2026",
+      "scope": [
+        "ufa"
+      ],
+      "channel": "Личное письменное заявление",
+      "places": [
+        "Деканат факультета/дирекция института",
+        "МФСО"
+      ],
+      "known_address": "г. Уфа, ул. Карла Маркса, 12, корпус 7, этаж 1",
+      "online_submission": false,
+      "deadline": "Не позднее 23 числа текущего месяца",
+      "source_ids": [
+        "uunit_order_2013_2026",
+        "uunit_faq"
+      ]
+    },
+    {
+      "id": "university_branches",
+      "program_id": "uunit_student_material_support_2013_2026",
+      "scope": [
+        "birsk",
+        "sterlitamak",
+        "sibay",
+        "neftekamsk",
+        "ishimbay",
+        "kumertau"
+      ],
+      "channel": "Личное письменное заявление",
+      "places": [
+        "Ответственное структурное подразделение филиала"
+      ],
+      "known_address": null,
+      "online_submission": false,
+      "deadline": "Не позднее 23 числа текущего месяца",
+      "source_ids": [
+        "uunit_order_2013_2026",
+        "birsk_social_support"
+      ],
+      "notes": [
+        "В Бирском филиале заявления принимаются в деканате факультета; для других филиалов точное место следует уточнить на месте."
+      ]
+    },
+    {
+      "id": "student_union_additional",
+      "program_id": null,
+      "scope": [
+        "ufa"
+      ],
+      "channel": "Профком студентов",
+      "places": [
+        "г. Уфа, ул. Карла Маркса, 12, корпус 1, помещение 1-129"
+      ],
+      "known_address": "г. Уфа, ул. Карла Маркса, 12, корпус 1, помещение 1-129",
+      "online_submission": false,
+      "deadline": null,
+      "source_ids": [
+        "uunit_student_union_budget"
+      ],
+      "notes": [
+        "Это отдельный консультационный/профсоюзный путь, НЕ замена основному порядку материальной помощи по приказу №2013.",
+        "На странице профкома для оформления указаны копии подтверждающих документов и профсоюзный билет.",
+        "Страница предлагает уточнять актуальные даты приёма заявлений в профкоме или его VK-группе.",
+        "Время приема на странице: будни 11:00–16:00, перерыв 13:00–14:00; перед посещением лучше уточнить."
+      ]
+    },
+    {
+      "id": "family_support_consultation",
+      "program_id": null,
+      "scope": [
+        "ufa"
+      ],
+      "channel": "Консультация центра «Единое окно» для молодых семей",
+      "places": [
+        "Управление по социальной работе, ул. Карла Маркса, 12, корпус 1, кабинеты 237 и 239"
+      ],
+      "known_address": "г. Уфа, ул. Карла Маркса, 12, корпус 1",
+      "online_submission": null,
+      "deadline": null,
+      "source_ids": [
+        "uunit_family_window"
+      ],
+      "notes": [
+        "Помогает разобраться с федеральными, региональными и университетскими мерами поддержки; не является отдельным видом единовременной материальной помощи по приказу №2013."
+      ]
+    }
+  ],
+  "sources": [
+    {
+      "id": "uunit_order_2013_2026",
+      "title": "Приказ УУНиТ от 17.06.2026 № 2013 и Положение о материальной поддержке нуждающихся обучающихся",
+      "url": "https://uust.ru/unit/media/uploads/subdivuploads/%D0%A3%D0%A1%D0%A0/%D0%B5%D0%B4%D0%B8%D0%BD%D0%BE%D0%B5%20%D0%BE%D0%BA%D0%BD%D0%BE/2013-._17.06.2026.pdf",
+      "kind": "current_official_regulation",
+      "published_at": "2026-06-17",
+      "checked_at": "2026-11-20",
+      "pages": 18,
+      "is_normative_source": true,
+      "applies_to": [
+        "ufa",
+        "birsk",
+        "sterlitamak",
+        "sibay",
+        "neftekamsk",
+        "ishimbay",
+        "kumertau"
+      ]
+    },
+    {
+      "id": "uunit_social_material_aid",
+      "title": "Управление по социальной работе — Материальная поддержка обучающихся",
+      "url": "https://uust.ru/social/mat_poddergka/",
+      "kind": "current_official_guide",
+      "checked_at": "2026-11-20",
+      "is_normative_source": false
+    },
+    {
+      "id": "uunit_faq",
+      "title": "УУНиТ — Ответы на часто задаваемые вопросы",
+      "url": "https://uust.ru/faq/",
+      "kind": "current_official_faq",
+      "checked_at": "2026-11-20",
+      "is_normative_source": false
+    },
+    {
+      "id": "birsk_social_support",
+      "title": "Бирский филиал — Стипендиальное обеспечение и материальная поддержка",
+      "url": "https://birsk.uust.ru/node/1219",
+      "kind": "current_official_branch_guide",
+      "checked_at": "2026-11-20",
+      "is_normative_source": false
+    },
+    {
+      "id": "uunit_student_union_budget",
+      "title": "Профком студентов — Бюджетная форма обучения",
+      "url": "https://uust.ru/profstud/budget/",
+      "kind": "current_official_union_guide",
+      "checked_at": "2026-11-20",
+      "is_normative_source": false
+    },
+    {
+      "id": "uunit_family_window",
+      "title": "Единое окно — информация для молодых семей",
+      "url": "https://uust.ru/supporting-young-families/",
+      "kind": "current_official_family_guide",
+      "checked_at": "2026-11-20",
+      "is_normative_source": false
+    }
+  ]
+}

@@ -1,0 +1,198 @@
+name: university-agent
+
+x-rabbitmq-environment: &rabbitmq-environment
+  RABBITMQ_URL: amqp://${RABBITMQ_USER:-university}:${RABBITMQ_PASSWORD:-university}@rabbitmq:5672/
+  RABBITMQ_QUEUE: ${RABBITMQ_QUEUE:-agent_requests}
+  RABBITMQ_RESPONSE_QUEUE: ${RABBITMQ_RESPONSE_QUEUE:-agent_responses}
+
+x-rag-environment: &rag-environment
+  RAG_POSTGRES_HOST: postgres
+  RAG_POSTGRES_PORT: 5432
+  RAG_POSTGRES_DB: ${POSTGRES_DB:-university}
+  RAG_POSTGRES_USER: ${RAG_POSTGRES_USER:-rag_app}
+  RAG_POSTGRES_PASSWORD: ${RAG_POSTGRES_PASSWORD:-rag_app}
+  OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+  OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1/}
+  OPENROUTER_EMBEDDING_MODEL: ${OPENROUTER_EMBEDDING_MODEL:-baai/bge-m3}
+  OPENROUTER_TIMEOUT_SECONDS: ${OPENROUTER_TIMEOUT_SECONDS:-180}
+
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.7-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-university}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  postgres-init:
+    image: postgres:16
+    restart: 'no'
+    entrypoint: ["bash", "/opt/postgres/provision.sh"]
+    environment:
+      PGHOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-university}
+      BACKEND_POSTGRES_USER: ${BACKEND_POSTGRES_USER:-backend_app}
+      BACKEND_POSTGRES_PASSWORD: ${BACKEND_POSTGRES_PASSWORD:-backend_app}
+      RAG_POSTGRES_USER: ${RAG_POSTGRES_USER:-rag_app}
+      RAG_POSTGRES_PASSWORD: ${RAG_POSTGRES_PASSWORD:-rag_app}
+    volumes:
+      - ./deploy/postgres:/opt/postgres:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-university}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-university}
+    ports:
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_CONSOLE_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  minio:
+    build:
+      context: ./deploy/minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_REGION_NAME: ${MINIO_REGION:-us-east-1}
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:9000/minio/health/ready"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rag-index:
+    build:
+      context: ./ai-service
+    command: ["python", "-m", "app.index_campus"]
+    environment: *rag-environment
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+
+  campus-photos:
+    build:
+      context: ./ai-service
+    command: ["python", "-m", "app.import_campus_photos"]
+    environment:
+      RAG_POSTGRES_HOST: postgres
+      RAG_POSTGRES_PORT: 5432
+      RAG_POSTGRES_DB: ${POSTGRES_DB:-university}
+      RAG_POSTGRES_USER: ${RAG_POSTGRES_USER:-rag_app}
+      RAG_POSTGRES_PASSWORD: ${RAG_POSTGRES_PASSWORD:-rag_app}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-images}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+    depends_on:
+      postgres-init:
+        condition: service_completed_successfully
+      minio:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    environment:
+      <<: *rabbitmq-environment
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_SECURE_COOKIE: ${JWT_SECURE_COOKIE:-false}
+      HTTP_ADDRESS: :8080
+      POSTGRES_URL: postgres://${BACKEND_POSTGRES_USER:-backend_app}:${BACKEND_POSTGRES_PASSWORD:-backend_app}@postgres:5432/${POSTGRES_DB:-university}?sslmode=disable&search_path=backend
+      MINIO_ENDPOINT: minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:${FRONTEND_PORT:-5138}}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET: ${MINIO_BUCKET:-images}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_SECURE: 'false'
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      postgres-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
+    environment:
+      MINIO_BUCKET: ${MINIO_BUCKET:-images}
+    ports:
+      - "${FRONTEND_BIND_ADDRESS:-127.0.0.1}:${FRONTEND_PORT:-5138}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://127.0.0.1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ai-service:
+    build:
+      context: ./ai-service
+    restart: unless-stopped
+    init: true
+    environment:
+      <<: [*rabbitmq-environment, *rag-environment]
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-qwen/qwen3-30b-a3b-instruct-2507}
+      OPENROUTER_MAX_TOKENS: ${OPENROUTER_MAX_TOKENS:-1024}
+      RETRY_DELAY_SECONDS: ${RETRY_DELAY_SECONDS:-5}
+      RESPONSE_CACHE_SIZE: ${RESPONSE_CACHE_SIZE:-128}
+    ports:
+      - "127.0.0.1:${AI_SERVICE_PORT:-8000}:8000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      campus-photos:
+        condition: service_completed_successfully
+      rag-index:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  minio_data:

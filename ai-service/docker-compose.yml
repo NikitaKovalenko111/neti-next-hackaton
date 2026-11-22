@@ -1,0 +1,50 @@
+services:
+  postgres:
+    extends:
+      file: ../docker-compose.yml
+      service: postgres
+
+  postgres-init:
+    extends:
+      file: ../docker-compose.yml
+      service: postgres-init
+    volumes:
+      - ../deploy/postgres:/opt/postgres:ro
+
+  rabbitmq:
+    extends:
+      file: ../docker-compose.yml
+      service: rabbitmq
+
+  rag-index:
+    extends:
+      file: ../docker-compose.yml
+      service: rag-index
+    build:
+      context: .
+
+  minio:
+    extends:
+      file: ../docker-compose.yml
+      service: minio
+    build:
+      context: ../deploy/minio
+
+  campus-photos:
+    extends:
+      file: ../docker-compose.yml
+      service: campus-photos
+    build:
+      context: .
+
+  ai-service:
+    extends:
+      file: ../docker-compose.yml
+      service: ai-service
+    build:
+      context: .
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  minio_data:
