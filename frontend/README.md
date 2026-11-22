@@ -1,53 +1,24 @@
-# Think-About-It-Agent для УУНиТ
+# Фронтенд
 
-Веб-интерфейс помощника для абитуриентов и студентов Уфимского университета науки и технологий. В нём можно задать вопрос о поступлении, направлениях и студенческой жизни, продолжить диалог и открыть источники ответа.
+Веб-чат УУНиТ на React, TypeScript и Vite. Показывает историю диалогов, ответы в Markdown, источники, фотографии и карты. В Docker Nginx обслуживает сборку и проксирует HTTP, WebSocket и подписанные ссылки MinIO.
 
-Сценарий взят из базового университетского кейса трека ML Product и адаптирован для УУНиТ. [Описание кейса](https://docs.google.com/document/d/1abM0XMALBRC0ESZaYuCnDU85l00msq9RZelh9iXKuY4/edit) · [Официальный сайт УУНиТ](https://uust.ru/)
+## Запуск
 
-## Запуск в Docker
+Подготовьте корневой `.env` по [общей инструкции](../README.md#запуск-с-чистого-окружения), выполните из корня `docker compose up --build -d` и откройте [веб-чат](http://localhost:5138/).
 
-Из корня репозитория выполните `docker compose up --build -d` и откройте
-`http://localhost:5138`. Порт задаёт `FRONTEND_PORT` в корневом `.env`.
-Nginx обслуживает сборку React, проксирует HTTP и WebSocket к Go-бэкенду и передаёт
-запросы по подписанным ссылкам к бакету MinIO. [Общая настройка](../README.md#запуск-с-чистого-окружения)
+Для локальной разработки запустите бэкенд и выполните команды из каталога `frontend` с Node.js 22.
 
-При рассинхронизации `package-lock.json` сборка выводит предупреждение и обновляет
-копию lock-файла внутри образа перед повторным `npm ci`.
-
-## Локальная разработка
-
-```powershell
-cd frontend
+```sh
 npm ci
 npm run dev
 ```
 
-Vite запускает помощник УУНиТ на `http://localhost:5138/` и проксирует HTTP и WebSocket на Go-бэкенд по адресу `http://127.0.0.1:8080`. Для другого адреса задайте `CHAT_API_TARGET` в `frontend/.env.local` и перезапустите Vite. Инструкция запуска находится в [README бэкенда](../backend/README.md).
+Vite доступен на `http://localhost:5138/` и проксирует API и `/ws` на `http://127.0.0.1:8080`. Другой адрес Go-бэкенда можно задать переменной `CHAT_API_TARGET` в `frontend/.env.local`. Если этот порт уже занят контейнером фронтенда, укажите другой через `npm run dev -- --port 5173`. Для изображений в режиме разработки бэкенду нужен `MINIO_PUBLIC_ENDPOINT` с адресом, доступным браузеру, например `http://localhost:9000`.
 
-`npm run build` собирает фронтенд в `dist/`. При размещении сборки проксируйте `/register`, `/login`, `/logout`, `/request`, `/chats` и `/ws` к Go-бэкенду на том же публичном домене. Для `/ws` прокси должен поддерживать WebSocket Upgrade. Адрес MinIO, на который указывают подписанные ссылки из вложений, должен быть доступен браузеру.
+## Проверка
 
-## Структура
+`npm run lint` проверяет код. `npm run build` проверяет типы и сохраняет сборку в `dist/`. Формат ответов описан в [контракте WebSocket](../backend/API.md#websocket).
 
-Структура повторяет основные точки входа из [client в gazprom-hackaton](https://github.com/NikitaKovalenko111/gazprom-hackaton/tree/04f8a8181f082baea00b1df68c49a229e3250b06/client).
-
-| Файл или каталог | Назначение |
-| --- | --- |
-| `src/main.tsx`, `src/App.tsx` | Точка входа React и маршруты React Router DOM |
-| `src/pages/assistant/AssistantPage.tsx` | Экран чата |
-| `src/components/` | Шапка, сообщения и иконки |
-| `src/redux/store.ts`, `src/redux/assistantSlice.ts` | Redux Toolkit, текущая сессия и сообщения |
-| `src/redux/saga/saga.ts` | Redux Saga, запрос ответа и обработка ошибки |
-| `src/api/api.ts`, `src/api/messageBlocks.ts` | Axios, WebSocket и блоки сообщений |
-| `src/assets/styles/scss/styles.scss` | Стили интерфейса |
-
-## Контракт чата
-
-Гостевой клиент подключается к `/ws?user_id=<UUID>`, ждёт событие `ready` и отправляет вопрос через `POST /request` как `multipart/form-data`. Для продолжения диалога отправляется `chat_id`, полученный от бэкенда. При создании нового гостевого диалога фронтенд выдаёт новый UUID и очищает историю.
-
-Аккаунт получает JWT через `/register` или `/login`. Токен используется в заголовке `Authorization` при запросах к `/chats` и `/request`. WebSocket подключается к `/ws` с HttpOnly-cookie, установленной при входе. Избранное хранится в браузере отдельно для гостя и каждого аккаунта.
-
-Событие `agent_response` содержит блоки сообщения в порядке отображения. Фронтенд сопоставляет ответ с вопросом по `chat_id` и `request_message_id`. После обрыва соединения он ищет принятый ответ через `GET /chats/{chat_id}/messages`. Если вопрос уже принят, кнопка повтора проверяет его историю и не отправляет его заново.
-
-Текст передаётся в блоке `text`. В ответах помощника поддерживаются заголовки, выделение, списки, ссылки, цитаты и фрагменты кода Markdown. Картинки передаются в блоке `attachments` с подписанным `url`. Блок `map` содержит массив `points` с `latitude` и `longitude`. Одиночные карты из старых ответов поддерживают поля `lat` и `lon`.
+Сценарий разработан на основе университетского кейса трека ML Product. [Описание кейса](https://docs.google.com/document/d/1abM0XMALBRC0ESZaYuCnDU85l00msq9RZelh9iXKuY4/edit) · [Официальный сайт УУНиТ](https://uust.ru/)
 
 Фото главного корпуса FlankerFF кадрировано и тонировано в интерфейсе. [Оригинал на Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bashkir_State_University_(Ufa).jpg) · [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)

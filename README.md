@@ -6,10 +6,10 @@
 
 | Компонент | Технологии и назначение |
 | --- | --- |
-| `frontend/` | React, TypeScript, Vite, Redux Toolkit, Redux Saga, Leaflet. Nginx раздаёт приложение и проксирует API, WebSocket и подписанные ссылки на файлы. |
-| `backend/` | Go 1.24, `net/http`, pgx, JWT и bcrypt. Хранит аккаунты и историю, отправляет задачи и доставляет ответы через WebSocket. |
-| `ai-service/` | Python 3.12, FastAPI, aio-pika, asyncpg и OpenRouter. Агент вызывает инструменты поиска по университетской базе знаний и формирует ответ. |
-| Хранилища и обмен | PostgreSQL 16 с pgvector для истории и базы знаний, RabbitMQ для задач и ответов, MinIO для изображений. |
+| [Фронтенд](frontend/README.md) | React, TypeScript, Vite, Redux Toolkit, Redux Saga, Leaflet. Nginx раздаёт приложение и проксирует API, WebSocket и подписанные ссылки на файлы. |
+| [Go-бэкенд](backend/README.md) | Go 1.24, `net/http`, pgx, JWT и bcrypt. Хранит аккаунты и историю, отправляет задачи и доставляет ответы через WebSocket. |
+| [AI-сервис](ai-service/README.md) | Python 3.12, FastAPI, aio-pika, asyncpg и OpenRouter. Агент вызывает инструменты поиска по университетской базе знаний и формирует ответ. |
+| [Инфраструктура](deploy/README.md) | PostgreSQL 16 с pgvector для истории и базы знаний, RabbitMQ для задач и ответов, MinIO для изображений. |
 | Запуск и проверки | Docker Compose и GitHub Actions. |
 
 При отправке сообщения Go сохраняет его в PostgreSQL и ставит задачу в очередь `agent_requests`. Python-воркер получает из задачи контекст диалога и использует SQL для структурированных данных и pgvector для смыслового поиска. Он публикует ответ в `agent_responses`. Go сохраняет ответ в истории и отправляет его браузеру через WebSocket. Контекст передаётся через RabbitMQ, поэтому воркер работает со своей схемой `rag`.
@@ -122,6 +122,6 @@ docker compose down   # Удалить контейнеры, сохранив д
 
 Для проверок нужны Node.js 22, Go 1.24 и Python 3.12 или новее. Интеграционные тесты подключаются к реальным сервисам через `TEST_DATABASE_URL`, `TEST_RABBITMQ_URL` и `TEST_MINIO_ENDPOINT`, когда заданы необходимые переменные. Тестовая модель не обращается к OpenRouter.
 
-- HTTP API, WebSocket, Postman и проверка полного pipeline. [Backend](backend/README.md)
-- Настройка агента, импорт и поиск по базе знаний. [AI-сервис](ai-service/README.md), [Инструменты RAG](ai-service/tools/README.md)
-- Автоматические проверки и правила пропуска компонентов. [CI](.github/README.md)
+- HTTP API, WebSocket, Postman и сквозные тесты. [Справочник Go-бэкенда](backend/API.md)
+- Настройка агента, контракт очередей и импорт базы знаний. [Справочник AI-сервиса](ai-service/REFERENCE.md), [Инструменты RAG](ai-service/tools/README.md)
+- Автоматические проверки и правила пропуска компонентов. [CI](.github/CI.md)
