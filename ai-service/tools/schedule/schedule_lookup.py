@@ -10,9 +10,7 @@ from pathlib import Path
 from time import time
 
 from groups_service import GroupDirectory
-from schedule_api import API_BASE, api_url, read_json
-from student_lookup import searchable
-
+from schedule_api import API_BASE, api_url, read_json, searchable
 
 SCHEDULE_TYPES = {'group': 0, 'teacher': 1, 'room': 2}
 # Семестр и начало учебного года совпадают с настройками веб-расписания УУНиТ.
@@ -79,8 +77,9 @@ def _teachers(api_base):
         if entry is not None and time() - entry[0] < TEACHERS_CACHE_SECONDS:
             return json.loads(entry[1])
 
+        name_fields = ('surname', 'name', 'patronymic')
         teachers = [
-            [row['isu_person_id'], ' '.join(row.get(part) or '' for part in ('surname', 'name', 'patronymic'))]
+            [row['isu_person_id'], ' '.join(row.get(part) or '' for part in name_fields)]
             for row in _directory('teachers', api_base)
         ]
         cache.execute('''
@@ -169,7 +168,7 @@ def get_schedule(kind, entity_id, *, on_date=None, week=None, all_weeks=False,
     """Получить занятия в JSON-совместимом виде за выбранный период."""
     if kind not in SCHEDULE_TYPES:
         raise ValueError(f'Неизвестный тип расписания: {kind}')
-    if type(entity_id) is not int or entity_id < 1 or type(semester_id) is not int or semester_id < 1:
+    if any(type(value) is not int or value < 1 for value in (entity_id, semester_id)):
         raise ValueError('ID должен быть положительным целым числом')
     year_start, start, end = _period(academic_year, on_date, week, all_weeks)
     path = f'schedule/{SCHEDULE_TYPES[kind]}/{entity_id}/semester/{semester_id}'
@@ -192,21 +191,30 @@ def _positive_int(text):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Расписание группы, преподавателя или аудитории УУНиТ в JSON')
+    parser = argparse.ArgumentParser(
+        description='Расписание группы, преподавателя или аудитории УУНиТ в JSON'
+    )
     parser.add_argument('kind', choices=SCHEDULE_TYPES)
     entity = parser.add_mutually_exclusive_group(required=True)
     entity.add_argument('--id', type=_positive_int, help='ID группы, преподавателя или аудитории')
     entity.add_argument('--name', help='Название группы, ФИО или номер аудитории')
     building = parser.add_mutually_exclusive_group()
-    building.add_argument('--building-id', type=int, help='ID корпуса для поиска по номеру аудитории')
+    building.add_argument('--building-id', type=int, help='ID корпуса для поиска аудитории')
     building.add_argument('--building', help='Название или часть адреса корпуса')
-    parser.add_argument('--organization-id', type=_positive_int, default=1, help='ID организации для поиска корпуса')
+    parser.add_argument(
+        '--organization-id', type=_positive_int, default=1, help='ID организации для поиска корпуса'
+    )
     period = parser.add_mutually_exclusive_group()
     period.add_argument('--date', type=date.fromisoformat, help='Дата в формате ГГГГ-ММ-ДД')
     period.add_argument('--week', type=_positive_int, help='Номер учебной недели')
     period.add_argument('--all', action='store_true', help='Весь учебный год')
-    parser.add_argument('--semester-id', type=_positive_int, default=SEMESTER_ID, help='ID семестра в API')
-    parser.add_argument('--academic-year', type=_positive_int, default=ACADEMIC_YEAR, help='Первый год учебного периода')
+    parser.add_argument(
+        '--semester-id', type=_positive_int, default=SEMESTER_ID, help='ID семестра в API'
+    )
+    parser.add_argument(
+        '--academic-year', type=_positive_int, default=ACADEMIC_YEAR,
+        help='Первый год учебного периода',
+    )
     parser.add_argument('--api-base', default=API_BASE, help='Базовый адрес API расписания')
     options = parser.parse_args()
 
@@ -223,11 +231,13 @@ def main():
         )
         result = get_schedule(
             options.kind, entity_id, on_date=options.date, week=options.week, all_weeks=options.all,
-            semester_id=options.semester_id, academic_year=options.academic_year, api_base=options.api_base,
+            semester_id=options.semester_id, academic_year=options.academic_year,
+            api_base=options.api_base,
         )
     except (OSError, ValueError, HTTPException, KeyError, TypeError, sqlite3.Error) as error:
         parser.exit(1, f'Ошибка получения расписания: {error}\n')
-    sys.stdout.buffer.write((json.dumps(result, ensure_ascii=False, indent=2) + '\n').encode('utf-8'))
+    output = json.dumps(result, ensure_ascii=False, indent=2)
+    sys.stdout.buffer.write((output + '\n').encode('utf-8'))
 
 
 if __name__ == '__main__':

@@ -33,6 +33,26 @@ type Handler struct {
 func (h Handler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /register", h.credentials(h.Service.Register, http.StatusCreated))
 	mux.HandleFunc("POST /login", h.credentials(h.Service.Login, http.StatusOK))
+	mux.HandleFunc("POST /logout", h.logout)
+}
+
+func (h Handler) logout(w http.ResponseWriter, r *http.Request) {
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+	if err != nil || mediaType != "application/json" {
+		http.Error(w, "application/json is required", http.StatusUnsupportedMediaType)
+		return
+	}
+	h.setSocketCookie(w, r, "", -1)
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h Handler) setSocketCookie(w http.ResponseWriter, r *http.Request, token string, maxAge int) {
+	http.SetCookie(w, &http.Cookie{
+		Name: socketCookie, Value: token, Path: "/ws",
+		HttpOnly: true, Secure: h.SecureCookie || r.TLS != nil,
+		SameSite: http.SameSiteStrictMode, MaxAge: maxAge,
+	})
 }
 
 func (h Handler) credentials(operation func(context.Context, string, string) (service.Session, error), status int) http.HandlerFunc {
@@ -70,11 +90,7 @@ func (h Handler) credentials(operation func(context.Context, string, string) (se
 			return
 		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name: socketCookie, Value: session.AccessToken, Path: "/ws",
-			HttpOnly: true, Secure: h.SecureCookie || r.TLS != nil,
-			SameSite: http.SameSiteStrictMode, MaxAge: session.ExpiresIn,
-		})
+		h.setSocketCookie(w, r, session.AccessToken, session.ExpiresIn)
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "no-store")
 		w.WriteHeader(status)

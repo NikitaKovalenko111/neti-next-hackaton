@@ -5,6 +5,7 @@ import {
 } from '@reduxjs/toolkit'
 import type { AcceptedRequest } from '../api/api'
 import { currentAccount, type Account } from '../api/account'
+import { createChatId } from '../api/chatId'
 import type { ChatMessage } from '../api/messageBlocks'
 
 interface AssistantState {
@@ -19,7 +20,7 @@ interface AssistantState {
 
 const initialState: AssistantState = {
   account: currentAccount(),
-  sessionId: crypto.randomUUID(),
+  sessionId: createChatId(),
   chatId: null,
   pendingMessageId: null,
   messages: [],

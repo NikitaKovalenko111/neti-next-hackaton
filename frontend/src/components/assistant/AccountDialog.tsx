@@ -86,9 +86,11 @@ export function AccountDialog({ dialogRef, account, open, onClose, onAccountChan
   }
 
   function signOut() {
-    logout()
-    onAccountChange(null)
-    dialogRef.current?.close()
+    void run(async () => {
+      await logout()
+      onAccountChange(null)
+      dialogRef.current?.close()
+    }, 'Не удалось выйти. Проверьте подключение и попробуйте ещё раз.')
   }
 
   return (

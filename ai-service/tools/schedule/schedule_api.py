@@ -1,8 +1,11 @@
 import json
 from urllib.request import urlopen
 
-
 API_BASE = 'https://dev.uust-time.ru/api/v/852972'
+
+
+def searchable(value):
+    return str(value or '').casefold().replace('ё', 'е')
 
 
 def api_url(path, base=API_BASE):

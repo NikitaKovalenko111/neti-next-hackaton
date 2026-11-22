@@ -27,13 +27,7 @@ function* readReply(socket: EventChannel<ChatSocketEvent>, request: AcceptedRequ
   }
 }
 
-function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
-  if (!requestAnswer.match(action)) return
-
-  const state: RootState['assistant'] = yield select((root: RootState) => root.assistant)
-  const question = state.messages.at(-1)?.blocks[0]
-  if (state.sessionId !== action.payload || question?.type !== 'text') return
-
+function* sendAndWait(state: RootState['assistant'], question: string): SagaIterator {
   const identity = { guestId: state.sessionId, accountId: state.account?.id }
   const controller = new AbortController()
   let request = state.chatId && state.pendingMessageId
@@ -59,7 +53,7 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
           }
         } else {
           const accepted: AcceptedRequest = yield call(
-            sendAssistantMessage, identity, state.chatId, question.message, controller.signal,
+            sendAssistantMessage, identity, state.chatId, question, controller.signal,
           )
           request = accepted
           yield put(assistantActions.requestAccepted(accepted))
@@ -94,11 +88,32 @@ function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
   }
 }
 
-export function* assistantSaga() {
-  yield takeLatest([
-    requestAnswer.type,
+function* waitForSessionChange(sessionId: string): SagaIterator {
+  const sessionActions = [
     assistantActions.startNewSession.type,
     assistantActions.accountChanged.type,
     assistantActions.restoreChat.type,
-  ], answerWorker)
+  ]
+
+  while (true) {
+    yield take(sessionActions)
+    const current: string = yield select((root: RootState) => root.assistant.sessionId)
+    if (current !== sessionId) return
+  }
+}
+
+function* answerWorker(action: ReturnType<typeof requestAnswer>): SagaIterator {
+  const state: RootState['assistant'] = yield select((root: RootState) => root.assistant)
+  const last = state.messages.at(-1)
+  const question = last?.blocks[0]
+  if (state.sessionId !== action.payload || last?.role !== 'user' || question?.type !== 'text') return
+
+  yield race({
+    request: call(sendAndWait, state, question.message),
+    sessionChange: call(waitForSessionChange, state.sessionId),
+  })
+}
+
+export function* assistantSaga() {
+  yield takeLatest(requestAnswer.type, answerWorker)
 }

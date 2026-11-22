@@ -9,7 +9,7 @@
 Из корня репозитория выполните `docker compose up --build -d` и откройте
 `http://localhost:5138`. Порт задаёт `FRONTEND_PORT` в корневом `.env`.
 Nginx обслуживает сборку React, проксирует HTTP и WebSocket к Go-бэкенду и передаёт
-запросы по подписанным ссылкам к бакету MinIO. [Общая настройка](../README.md#общий-запуск)
+запросы по подписанным ссылкам к бакету MinIO. [Общая настройка](../README.md#запуск-с-чистого-окружения)
 
 При рассинхронизации `package-lock.json` сборка выводит предупреждение и обновляет
 копию lock-файла внутри образа перед повторным `npm ci`.
@@ -24,7 +24,7 @@ npm run dev
 
 Vite запускает помощник УУНиТ на `http://localhost:5138/` и проксирует HTTP и WebSocket на Go-бэкенд по адресу `http://127.0.0.1:8080`. Для другого адреса задайте `CHAT_API_TARGET` в `frontend/.env.local` и перезапустите Vite. Инструкция запуска находится в [README бэкенда](../backend/README.md).
 
-`npm run build` собирает фронтенд в `dist/`. При размещении сборки проксируйте `/register`, `/login`, `/request`, `/chats` и `/ws` к Go-бэкенду на том же публичном домене. Для `/ws` прокси должен поддерживать WebSocket Upgrade. Адрес MinIO, на который указывают подписанные ссылки из вложений, должен быть доступен браузеру.
+`npm run build` собирает фронтенд в `dist/`. При размещении сборки проксируйте `/register`, `/login`, `/logout`, `/request`, `/chats` и `/ws` к Go-бэкенду на том же публичном домене. Для `/ws` прокси должен поддерживать WebSocket Upgrade. Адрес MinIO, на который указывают подписанные ссылки из вложений, должен быть доступен браузеру.
 
 ## Структура
 
@@ -35,7 +35,7 @@ Vite запускает помощник УУНиТ на `http://localhost:5138/
 | `src/main.tsx`, `src/App.tsx` | Точка входа React и маршруты React Router DOM |
 | `src/pages/assistant/AssistantPage.tsx` | Экран чата |
 | `src/components/` | Шапка, сообщения и иконки |
-| `src/redux/store.ts`, `src/redux/assistantSlice.ts` | Redux Toolkit, текущая сессия, профиль и сообщения |
+| `src/redux/store.ts`, `src/redux/assistantSlice.ts` | Redux Toolkit, текущая сессия и сообщения |
 | `src/redux/saga/saga.ts` | Redux Saga, запрос ответа и обработка ошибки |
 | `src/api/api.ts`, `src/api/messageBlocks.ts` | Axios, WebSocket и блоки сообщений |
 | `src/assets/styles/scss/styles.scss` | Стили интерфейса |
@@ -48,6 +48,6 @@ Vite запускает помощник УУНиТ на `http://localhost:5138/
 
 Событие `agent_response` содержит блоки сообщения в порядке отображения. Фронтенд сопоставляет ответ с вопросом по `chat_id` и `request_message_id`. После обрыва соединения он ищет принятый ответ через `GET /chats/{chat_id}/messages`. Если вопрос уже принят, кнопка повтора проверяет его историю и не отправляет его заново.
 
-Текст передаётся в блоке `text`, картинки — в `attachments` с подписанным `url`. Блок `map` содержит массив `points` с `latitude` и `longitude`. Одиночные карты из старых ответов поддерживают поля `lat` и `lon`. Модель определяет профиль по репликам диалога и передаёт его в текстовом блоке как `audience` (`applicant`, `student` или `unknown`). Фронтенд обновляет карточку профиля после ответа.
+Текст передаётся в блоке `text`. В ответах помощника поддерживаются заголовки, выделение, списки, ссылки, цитаты и фрагменты кода Markdown. Картинки передаются в блоке `attachments` с подписанным `url`. Блок `map` содержит массив `points` с `latitude` и `longitude`. Одиночные карты из старых ответов поддерживают поля `lat` и `lon`.
 
 Фото главного корпуса FlankerFF кадрировано и тонировано в интерфейсе. [Оригинал на Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Bashkir_State_University_(Ufa).jpg) · [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)

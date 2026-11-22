@@ -4,8 +4,7 @@ import { UniversityMark } from './UniversityMark'
 
 export const universityUrl = 'https://uust.ru/'
 
-export function ProjectHeader({ profileLabel, signedIn, onNewChat, onOpenFavorites, onOpenAccount }: {
-  profileLabel: string
+export function ProjectHeader({ signedIn, onNewChat, onOpenFavorites, onOpenAccount }: {
   signedIn: boolean
   onNewChat: () => void
   onOpenFavorites: () => void
@@ -28,8 +27,7 @@ export function ProjectHeader({ profileLabel, signedIn, onNewChat, onOpenFavorit
           <AssistantIcon name="plus" />
           Новый диалог
         </button>
-        <div className="topbar-status">
-          <div className="profile-status" role="status">{profileLabel}</div>
+        <div className="topbar-actions">
           <button aria-haspopup="dialog" className="favorites-button" onClick={onOpenFavorites} type="button">
             <AssistantIcon name="star" />
             Избранное

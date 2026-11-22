@@ -193,20 +193,12 @@ button:enabled {
   background: var(--primary-hover);
 }
 
-.topbar-status {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+.topbar-actions {
+  display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: .5rem;
   min-width: 0;
-}
-
-.profile-status {
-  justify-self: center;
-  color: var(--ink);
-  font-size: clamp(.875rem, 2.2vw, 1.2rem);
-  font-weight: 700;
-  text-align: center;
 }
 
 .favorites-button,
@@ -562,6 +554,47 @@ button:enabled {
   line-height: 1.37;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.message-bubble--markdown {
+  white-space: normal;
+
+  :where(p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre, hr) {
+    margin: .65em 0;
+  }
+
+  > :first-child { margin-block-start: 0; }
+  > :last-child { margin-block-end: 0; }
+
+  :where(h1, h2, h3, h4, h5, h6) {
+    font-weight: 800;
+    line-height: 1.2;
+  }
+
+  h1 { font-size: 1.35em; }
+  h2 { font-size: 1.2em; }
+  h3 { font-size: 1.1em; }
+  strong { font-weight: 850; }
+
+  :where(ul, ol) { padding-inline-start: 1.5em; }
+
+  blockquote {
+    border-inline-start: .2em solid var(--line);
+    padding-inline-start: .75em;
+  }
+
+  :where(pre, code) {
+    border-radius: .35rem;
+    background: var(--surface);
+  }
+
+  pre {
+    overflow-x: auto;
+    padding: .55em .75em;
+  }
+
+  :not(pre) > code { padding: .1em .25em; }
+  a { color: var(--accent); }
 }
 
 .user-row .message-bubble {
@@ -1178,16 +1211,9 @@ button:enabled {
     font-size: clamp(.76rem, 3.5vw, .95rem);
   }
 
-  .topbar-status {
+  .topbar-actions {
     grid-column: 1 / -1;
     grid-row: 2;
-  }
-
-  .profile-status {
-    justify-self: start;
-    color: var(--muted);
-    font-size: .8rem;
-    text-align: start;
   }
 
   .favorites-button {

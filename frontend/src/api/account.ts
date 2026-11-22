@@ -1,5 +1,6 @@
 import axios from 'axios'
-import { parseMessage, type ChatMessage } from './messageBlocks'
+import { chatHistory } from './chatHistory'
+import type { ChatMessage } from './messageBlocks'
 
 export interface Account {
   id: string
@@ -65,32 +66,22 @@ export async function authenticate(mode: 'login' | 'register', username: string,
   return account
 }
 
-export function logout() {
+export async function logout() {
+  await axios.post('/logout', {}, { timeout: 15_000 })
   storeSession(null)
 }
 
 export async function accountChats(id: string, signal: AbortSignal) {
-  const { data } = await axios.get<SavedChat[]>('/chats', { headers: accountHeaders(id), signal })
+  const { data } = await axios.get<SavedChat[]>('/chats', { headers: accountHeaders(id), signal, timeout: 15_000 })
   return data ?? []
 }
 
 export async function accountChat(id: string, chatId: string, signal: AbortSignal) {
   const messages: ChatMessage[] = []
-  let after: string | undefined
-  for (;;) {
-    const { data } = await axios.get<unknown[]>(`/chats/${encodeURIComponent(chatId)}/messages`, {
-      params: { after }, headers: accountHeaders(id), signal,
-    })
-    for (const item of data) {
-      if (!item || typeof item !== 'object' || !('role' in item) ||
-        (item.role !== 'user' && item.role !== 'assistant')) throw new Error('Не удалось прочитать диалог.')
-      const message = parseMessage(item, item.role)
-      if (!message) throw new Error('Не удалось прочитать диалог.')
-      messages.push(message)
-    }
-    if (data.length < 100) return messages
-    after = messages.at(-1)?.id
+  for await (const { message } of chatHistory(chatId, { headers: accountHeaders(id), signal })) {
+    messages.push(message)
   }
+  return messages
 }
 
 export function accountError(error: unknown, fallback: string) {

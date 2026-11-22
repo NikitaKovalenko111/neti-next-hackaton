@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { buffers, eventChannel } from 'redux-saga'
 import { accountHeaders } from './account'
+import { chatHistory } from './chatHistory'
 import { parseMessage, type ChatMessage } from './messageBlocks'
 
 export interface AcceptedRequest {
@@ -69,7 +70,7 @@ export async function sendAssistantMessage(
   if (chatId) form.set('chat_id', chatId)
 
   const headers = identity.accountId ? accountHeaders(identity.accountId) : undefined
-  const { data } = await axios.post('/request', form, { headers, signal })
+  const { data } = await axios.post('/request', form, { headers, signal, timeout: 20_000 })
   if (typeof data?.chat_id !== 'string' || typeof data?.message_id !== 'string') {
     throw new Error('Сервис не подтвердил отправку вопроса.')
   }
@@ -81,15 +82,13 @@ export async function recoverAnswer(
   request: AcceptedRequest,
   signal: AbortSignal,
 ): Promise<ChatMessage | undefined> {
-  const { data } = await axios.get<unknown>(`/chats/${encodeURIComponent(request.chatId)}/messages`, {
-    params: { user_id: identity.accountId ? undefined : identity.guestId, after: request.messageId },
+  const history = chatHistory(request.chatId, {
+    after: request.messageId,
+    guestId: identity.accountId ? undefined : identity.guestId,
     headers: identity.accountId ? accountHeaders(identity.accountId) : undefined,
     signal,
   })
-  if (!Array.isArray(data)) return
-
-  const response = data.find(
-    (entry) => entry?.role === 'assistant' && entry.request_message_id === request.messageId,
-  )
-  return parseMessage(response, 'assistant')
+  for await (const { message, requestMessageId } of history) {
+    if (message.role === 'assistant' && requestMessageId === request.messageId) return message
+  }
 }

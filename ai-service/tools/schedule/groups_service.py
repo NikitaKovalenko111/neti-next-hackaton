@@ -9,9 +9,7 @@ from threading import Lock
 from time import monotonic
 from urllib.parse import parse_qs
 
-from schedule_api import api_url, read_json
-from student_lookup import searchable
-
+from schedule_api import api_url, read_json, searchable
 
 GROUPS_URL = api_url('groups')
 CACHE_SECONDS = 60
@@ -107,7 +105,8 @@ def main():
 
     handler = partial(GroupsHandler, directory=GroupDirectory(options.source_url))
     with ThreadingHTTPServer((options.host, options.port), handler) as server:
-        print(f'Список групп доступен по адресу http://{options.host}:{server.server_port}/groups', flush=True)
+        address = f'http://{options.host}:{server.server_port}/groups'
+        print(f'Список групп доступен по адресу {address}', flush=True)
         try:
             server.serve_forever()
         except KeyboardInterrupt:

@@ -69,6 +69,8 @@ async def test_agent_returns_answer_after_two_tool_rounds(settings, request_mess
         if len(calls) == 4:
             assert payload["response_format"]["type"] == "json_schema"
             assert payload["tool_choice"] == "none"
+            assert payload["messages"][1] == {"role": "user", "content": request_message.message}
+            assert payload["messages"][-1]["tool_call_id"] == "call_list_support_channels"
             return final_reply(
                 "Срок по этому основанию — 6 месяцев. (status: official_address_confirmed)"
                 "\n\nИсточник: https://uust.ru/policy/",
@@ -117,6 +119,52 @@ async def test_model_can_answer_without_querying_postgres(settings):
     execute.assert_not_awaited()
 
 
+@pytest.mark.parametrize(
+    ("question", "previous_turn", "expected"),
+    [
+        ("Какие есть направления разработки?", None, "Можно начать с веб-разработки."),
+        (
+            "Уфа",
+            ConversationTurn(
+                user_message="Куда подать документы на материальную помощь?",
+                assistant_message="В каком городе вы учитесь?",
+            ),
+            "В Уфе обратитесь в студенческий офис.",
+        ),
+    ],
+)
+async def test_finalization_keeps_the_actual_user_message(
+    settings, question, previous_turn, expected
+):
+    requests = []
+
+    def respond(request):
+        payload = json.loads(request.content)
+        requests.append(payload)
+        if payload.get("tool_choice") != "none":
+            return reply(content=expected)
+
+        if payload["messages"][-1] != {"role": "user", "content": question}:
+            return final_reply("Понял, отвечаю на последнюю реплику. Пожалуйста, напишите её.")
+        return final_reply(expected)
+
+    conversation = ConversationContext(recent_turns=[previous_turn] if previous_turn else [])
+    execute = AsyncMock()
+    async with httpx.AsyncClient(
+        base_url=str(settings.openrouter_base_url),
+        transport=httpx.MockTransport(respond),
+    ) as client:
+        agent = ToolCallingAgent(OpenRouterClient(client, settings), execute)
+        answer = await agent.generate("system", question, conversation=conversation)
+
+    assert answer.message == expected
+    assert len(requests) == 2
+    assert requests[1]["messages"][1:] == requests[0]["messages"][1:]
+    assert "Верни только объект JSON" in requests[1]["messages"][0]["content"]
+    assert "history_summary" in requests[1]["messages"][0]["content"]
+    execute.assert_not_awaited()
+
+
 async def test_tool_budget_limits_calls_in_one_model_response(settings):
     rounds = []
     execute = AsyncMock(return_value={"status": "unavailable", "reason": "database_error"})
@@ -130,7 +178,7 @@ async def test_tool_budget_limits_calls_in_one_model_response(settings):
         assert len(payload["tools"]) == 29
         assistant = payload["messages"][2]
         assert len(assistant["tool_calls"]) == MAX_TOOL_CALLS
-        tool_results = payload["messages"][3:-1]
+        tool_results = payload["messages"][3:]
         assert len(tool_results) == MAX_TOOL_CALLS
         assert all(
             json.loads(result["content"])["status"] == "unavailable" for result in tool_results
@@ -187,9 +235,11 @@ async def test_passing_score_requires_lookup_and_retries_invalid_final_answer(se
         if len(requests) == 2:
             return reply(content="Проходной балл — 231.")
         assert payload["tool_choice"] == "none"
+        assert payload["messages"][-1]["role"] == "tool"
         if len(requests) == 3:
             return reply(content='{"message":')
 
+        assert "Выведи только полный JSON" in payload["messages"][0]["content"]
         assert any(msg["role"] == "tool" and "231" in msg["content"] for msg in payload["messages"])
         content = json.dumps({"message": "Проходной балл — 231.", "source": [source]})
         return reply(content=f"```json\n{content}\n```")
@@ -336,7 +386,7 @@ async def test_agent_serializes_map_points_from_the_lookup(
         if payload.get("tool_choice") == "none":
             schema = payload["response_format"]["json_schema"]["schema"]
             assert "map_place_ids" in schema["required"]
-            assert "даже если пользователь явно её не просил" in payload["messages"][-1]["content"]
+            assert "даже если пользователь явно её не просил" in payload["messages"][0]["content"]
             return reply(
                 content=json.dumps(
                     {

@@ -1,6 +1,9 @@
-import type { ChatMessage, MessageBlock } from '../../api/messageBlocks'
+import { lazy, Suspense } from 'react'
+import { isWebUrl, type ChatMessage, type MessageBlock } from '../../api/messageBlocks'
 import { AssistantIcon, AssistantMark } from './AssistantIcon'
 import { RouteCard } from './RouteCard'
+
+const Markdown = lazy(() => import('react-markdown'))
 
 interface MessageBubbleProps {
   message: ChatMessage
@@ -10,9 +13,29 @@ interface MessageBubbleProps {
   onToggleFavorite?: () => void
 }
 
-function BlockView({ block }: { block: MessageBlock }) {
+function BlockView({ block, renderMarkdown }: { block: MessageBlock; renderMarkdown: boolean }) {
   switch (block.type) {
     case 'text':
+      if (renderMarkdown) {
+        return (
+          <div className="message-bubble message-bubble--markdown">
+            <Suspense fallback={block.message}>
+              <Markdown
+                components={{
+                  a: ({ href, children }) => href
+                    ? <a href={href} rel="noreferrer" target="_blank">{children}</a>
+                    : <>{children}</>,
+                }}
+                disallowedElements={['img']}
+                skipHtml
+                urlTransform={(url) => isWebUrl(url) ? url : undefined}
+              >
+                {block.message}
+              </Markdown>
+            </Suspense>
+          </div>
+        )
+      }
       return <div className="message-bubble">{block.message}</div>
     case 'attachments':
       return (
@@ -58,7 +81,7 @@ export function MessageBubble({ message, onFollowUp, isLoading, isFavorite, onTo
       <div className="message-content">
         <div className="message-blocks">
           {message.blocks.length
-            ? message.blocks.map((block, index) => <BlockView block={block} key={index} />)
+            ? message.blocks.map((block, index) => <BlockView block={block} key={index} renderMarkdown={isAssistant} />)
             : <div className="message-bubble">Формат ответа пока не поддерживается.</div>}
         </div>
         {Boolean(message.sources?.length) && (
